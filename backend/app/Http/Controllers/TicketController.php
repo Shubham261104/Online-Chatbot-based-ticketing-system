@@ -56,7 +56,7 @@ class TicketController extends Controller
             'total_price' => $totalPrice,
             'status' => 'pending',
             'razorpay_order_id' => $orderId,
-            'user_id' => auth()->id()
+            'user_id' => auth('api')->id() ?? null
         ]);
 
         // Update slot booked count
@@ -91,6 +91,30 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
     
+    public function getSlots(Request $request)
+    {
+        $date = $request->query('date', now()->toDateString());
+        $allSlots = [
+            '09:00 AM - 10:30 AM',
+            '10:30 AM - 12:00 PM',
+            '12:00 PM - 01:30 PM',
+            '01:30 PM - 03:00 PM',
+            '03:00 PM - 04:30 PM',
+            '04:30 PM - 06:00 PM',
+        ];
+        $capacity = 50;
+        $result = [];
+        foreach ($allSlots as $slot) {
+            $booked = Slot::where('date', $date)->where('time_slot', $slot)->value('booked') ?? 0;
+            $remaining = $capacity - $booked;
+            if ($remaining <= 0) $status = 'Sold Out';
+            elseif ($remaining <= 10) $status = 'Few Tickets Left';
+            else $status = 'Available';
+            $result[] = ['time' => $slot, 'status' => $status, 'remaining' => $remaining];
+        }
+        return response()->json($result);
+    }
+
     public function allTickets()
     {
         // Admin access

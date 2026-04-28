@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, LogIn, Loader2, Landmark, Eye, EyeOff, ShieldCheck, Ticket, Bot } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { motion } from 'framer-motion';
@@ -11,6 +11,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(redirectTo);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Invalid email or password');
     } finally {

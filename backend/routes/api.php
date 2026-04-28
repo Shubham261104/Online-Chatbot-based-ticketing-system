@@ -7,22 +7,21 @@ use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\PaymentController;
 
+// Public auth routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
+// Public booking & payment (no login required)
+Route::get('/slots', [TicketController::class, 'getSlots']);
+Route::post('/book-ticket', [TicketController::class, 'book']);
+Route::post('/payment', [PaymentController::class, 'store']);
+Route::post('/chatbot', [ChatbotController::class, 'message']);
+
+// Protected routes (require JWT)
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
-    
-    // Ticket Booking
-    Route::post('/book-ticket', [TicketController::class, 'book']);
     Route::get('/tickets', [TicketController::class, 'userHistory']);
-    
-    // Payments
-    Route::post('/payment', [PaymentController::class, 'store']);
-    
-    // Chatbot (Protected to log user_id)
-    Route::post('/chatbot', [ChatbotController::class, 'message']);
 });
 
 // Admin APIs

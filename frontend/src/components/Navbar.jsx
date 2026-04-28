@@ -87,7 +87,7 @@ const Navbar = () => {
                   <ChevronDown className="w-3 h-3" />
                 </div>
 
-                <Link to="/dashboard" className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-full border border-white/20 hover:bg-white/20 transition-all">
+                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-full border border-white/20 hover:bg-white/20 transition-all">
                   <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg">
                     {user.name?.charAt(0)}
                   </div>

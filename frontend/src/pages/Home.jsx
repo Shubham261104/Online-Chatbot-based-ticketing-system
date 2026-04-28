@@ -132,7 +132,7 @@ const Home = () => {
               <div>
                 <p className="text-white font-bold text-lg leading-none mb-1">Join thousands of happy visitors</p>
                 <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-museum-gold text-museum-gold" />)}
+                   {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-museum-gold text-museum-gold" />)}
                   <span className="text-gray-400 text-sm ml-2">4.9/5 Average Rating</span>
                 </div>
               </div>

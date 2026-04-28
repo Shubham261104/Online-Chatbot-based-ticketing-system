@@ -14,50 +14,139 @@ class ChatbotController extends Controller
         ]);
 
         $text = strtolower($request->message);
-        $reply = $this->getResponse($text);
+        
+        // 1. Check Local Knowledge Base (Hybrid System)
+        $reply = $this->getLocalResponse($text);
 
-        // Store user message
+        // 2. Fallback to AI (OpenAI) if no local match
+        if (!$reply) {
+            $reply = $this->getAIResponse($request->message);
+        }
+
+        /* 
         ChatLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth()->check() ? auth()->id() : null,
             'message' => $request->message,
             'sender' => 'user'
         ]);
 
-        // Store bot reply
         ChatLog::create([
-            'user_id' => auth()->id(),
+            'user_id' => auth()->check() ? auth()->id() : null,
             'message' => $reply,
             'sender' => 'bot'
         ]);
+        */
 
         return response()->json([
             'reply' => $reply
         ]);
     }
 
-    private function getResponse($text)
+    /**
+     * Step 1: Predefined Fast FAQ Logic
+     */
+    private function getLocalResponse($text)
     {
-        // Simple Rule-based / NLP search
-        if (str_contains($text, 'hello') || str_contains($text, 'hi') || str_contains($text, 'नमस्ते')) {
-            return "Hello! I am your Museum AI Assistant. You can ask me about ticket prices, museum timings, or book a ticket. How can I help you today?";
+        $faqs = [
+            'price' => [
+                'keywords' => ['price', 'ticket', 'cost', 'fee', 'charge', 'amount', 'paise', 'rupees', 'टिकट'],
+                'reply' => "🎟️ Ticket Prices:\n• Adult: ₹500\n• Child (5-12): ₹250\n• Student: ₹200 (with ID)\n• Below 5: FREE"
+            ],
+            'timing' => [
+                'keywords' => ['timing', 'time', 'open', 'close', 'hour', 'when', 'schedule', 'monday', 'समय'],
+                'reply' => "🕒 Opening Hours:\nTue - Sun: 9 AM - 6 PM\n🚫 Monday: CLOSED\nLast entry: 5 PM."
+            ],
+            'booking' => [
+                'keywords' => ['book', 'buy', 'purchase', 'reserve', 'confirmation', 'get ticket', 'टिकट बुक'],
+                'reply' => "You can book tickets easily on our 'Book Tickets' page! 📱 Select your date and visitors to get an instant QR ticket."
+            ],
+            'location' => [
+                'keywords' => ['location', 'where', 'place', 'address', 'reach', 'map', 'direction', 'pata', 'पता'],
+                'reply' => "📍 Location: Central Heritage Park, Gate 2, New Delhi.\n🚇 Metro: Heritage Park Station (Yellow Line)."
+            ],
+        ];
+
+        // First check for exact word matches
+        foreach ($faqs as $faq) {
+            if ($this->containsAny($text, $faq['keywords'])) {
+                return $faq['reply'];
+            }
         }
 
-        if (str_contains($text, 'price') || str_contains($text, 'ticket') || str_contains($text, 'टिकट')) {
-            return "Museum entry tickets are: ₹500 for Adults, ₹250 for children (5-12 years), and ₹200 for students with valid ID. Children under 5 enter for free.";
+        // Fuzzy matching fallback (Levenshtein)
+        foreach ($faqs as $faq) {
+            foreach ($faq['keywords'] as $keyword) {
+                if (levenshtein($text, $keyword) <= 2) { // Allow 2 characters difference
+                    return $faq['reply'];
+                }
+            }
         }
 
-        if (str_contains($text, 'timing') || str_contains($text, 'time') || str_contains($text, 'समय')) {
-            return "The museum is open daily from 9:00 AM to 6:00 PM. Last entry is at 5:00 PM.";
+        return null;
+    }
+
+    /**
+     * Step 2: OpenAI Fallback for Intelligent Conversations
+     */
+    private function getAIResponse($userMessage)
+    {
+        $apiKey = env('OPENAI_API_KEY');
+        
+        if (!$apiKey) {
+            return "I apologize, but I'm currently in basic mode. You can ask me about prices, timings, or location. For more complex help, please check our help section.";
         }
 
-        if (str_contains($text, 'book') || str_contains($text, 'buy')) {
-            return "You can book tickets directly from our 'Book Tickets' page or tell me the date and number of visitors here!";
+        /*
+        // Fetch last 5 messages for context
+        $history = ChatLog::where('user_id', auth()->id())
+            ->latest()
+            ->take(5)
+            ->get()
+            ->reverse();
+
+        $messages = [
+            ['role' => 'system', 'content' => 'You are a helpful and professional AI Assistant for the National Heritage Museum. Keep answers polite and museum-focused. Support both English and Hindi. Use previous context if available.']
+        ];
+
+        foreach ($history as $log) {
+            $messages[] = ['role' => $log->sender === 'bot' ? 'assistant' : 'user', 'content' => $log->message];
         }
 
-        if (str_contains($text, 'location') || str_contains($text, 'where') || str_contains($text, 'pata') || str_contains($text, 'pata')) {
-            return "We are located at Central Park, Heritage District, New Delhi. The nearest metro station is Heritage Park (Line 2).";
-        }
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+        */
 
-        return "I apologize, but I didn't quite catch that. You can ask about 'prices', 'timings', or 'how to book'.";
+        $messages = [
+            ['role' => 'system', 'content' => 'You are a helpful and professional AI Assistant for the National Heritage Museum. Keep answers polite and museum-focused. Support both English and Hindi.'],
+            ['role' => 'user', 'content' => $userMessage]
+        ];
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => 'Bearer ' . $apiKey,
+                'Content-Type' => 'application/json',
+            ])->post('https://api.openai.com/v1/chat/completions', [
+                'model' => 'gpt-3.5-turbo',
+                'messages' => $messages,
+                'max_tokens' => 200
+            ]);
+
+            if ($response->successful()) {
+                return $response->json()['choices'][0]['message']['content'];
+            }
+            
+            return "I'm having a small connection issue with my AI brain. How else can I help with museum info?";
+        } catch (\Exception $e) {
+            return "I understand your query but I'm unable to reach my advanced logic right now. Try asking about 'ticket prices' or 'timings'!";
+        }
+    }
+
+    private function containsAny($text, $array)
+    {
+        foreach ($array as $word) {
+            if (str_contains($text, $word)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
