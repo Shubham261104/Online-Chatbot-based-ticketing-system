@@ -38,6 +38,8 @@ const Footer = () => {
               <li><Link to="/booking" className="hover:text-museum-gold transition-colors">Book Tickets</Link></li>
               <li><Link to="/chat" className="hover:text-museum-gold transition-colors">AI Chatbot</Link></li>
               <li><Link to="/shows" className="hover:text-museum-gold transition-colors">Shows & Events</Link></li>
+              <li><Link to="/about" className="hover:text-museum-gold transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-museum-gold transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 
@@ -80,10 +82,11 @@ const Footer = () => {
         <div className="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-500 text-sm font-bold">
           <p>© 2024 Museum Ticketing System. Crafted with passion.</p>
           <div className="flex gap-8 uppercase tracking-widest text-[10px]">
-            <a href="#" className="hover:text-museum-gold transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-museum-gold transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-museum-gold transition-colors">Cookie Policy</a>
+            <Link to="/privacy" className="hover:text-museum-gold transition-colors text-gray-500">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-museum-gold transition-colors text-gray-500">Terms of Service</Link>
+            <Link to="/cookies" className="hover:text-museum-gold transition-colors text-gray-500">Cookie Policy</Link>
           </div>
+
         </div>
       </div>
     </footer>

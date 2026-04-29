@@ -69,7 +69,7 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                       { label: 'Time Slot', value: ticket.time_slot, icon: Clock },
                       { label: 'Visitor Name', value: ticket.visitor_name, icon: User },
                       { label: 'No. of Tickets', value: `${ticket.adults + ticket.children} Total`, icon: TicketIcon },
-                      { label: 'Ticket Type', value: 'General Entry', icon: Zap },
+                      { label: 'Ticket Type', value: ticket.event_name ? ticket.event_name : 'General Entry', icon: Zap },
                       { label: 'Total Paid', value: `₹${ticket.total_price}.00`, icon: IndianRupee },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-3">
@@ -130,7 +130,7 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-museum-dark mb-4 shadow-lg border border-slate-100">
                       <Landmark className="w-6 h-6" />
                    </div>
-                   <h3 className="font-black text-[11px] text-slate-900 tracking-tight uppercase mb-1">Heritage Museum</h3>
+                   <h3 className="font-black text-[11px] text-slate-900 tracking-tight uppercase mb-1">{ticket.event_name || 'Heritage Museum'}</h3>
                    
                    <div className="space-y-4 mb-6">
                       <div>

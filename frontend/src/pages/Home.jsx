@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, Ticket, Sparkles, ChevronRight, Zap, ShieldCheck, Languages, Landmark, MessageSquare, ArrowRight, Star, BarChart3 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, animate, useInView } from 'framer-motion';
 import heroBg from '../assets/hero-bg.png';
 
 const Home = () => {
@@ -44,8 +44,108 @@ const Home = () => {
     "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=150&h=150&auto=format&fit=crop"
   ];
 
+  const [visitorCount, setVisitorCount] = useState(12480);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisitorCount(prev => prev + Math.floor(Math.random() * 3) + 1);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const stats = [
+    { label: "Daily Visitors", value: 2500, suffix: "+", decimals: 0 },
+    { label: "Museum Exhibits", value: 1500, suffix: "+", decimals: 0 },
+    { label: "Booking Success", value: 99.9, suffix: "%", decimals: 1 },
+    { label: "Active Guides", value: 24, suffix: "/7", decimals: 0 },
+  ];
+
+  const MouseSpotlight = () => {
+    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+      const handleMouseMove = (e) => {
+        setMousePos({ x: e.clientX, y: e.clientY });
+      };
+      window.addEventListener('mousemove', handleMouseMove);
+      return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    return (
+      <motion.div 
+        animate={{ 
+          x: mousePos.x - 400, 
+          y: mousePos.y - 400 
+        }}
+        transition={{ type: "spring", damping: 30, stiffness: 100 }}
+        className="fixed top-0 left-0 w-[800px] h-[800px] bg-museum-gold/5 blur-[120px] rounded-full pointer-events-none z-0 opacity-40"
+      />
+    );
+  };
+
+
+
+  const liveEvents = [
+    "Renaissance Art Tour (Hall A) - Starting in 10 mins",
+    "Ancient Egypt Virtual Reality Experience - Live Now",
+    "Special Guest Lecture: Digital Archeology - Hall C",
+    "Interactive Science for Kids - Zone 4",
+  ];
+
+  const testimonials = [
+    {
+      name: "Sophia Chen",
+      role: "Art Historian",
+      content: "The AI chatbot made booking my weekend tour incredibly simple. No more waiting on hold!",
+      rating: 5,
+      img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=150&h=150&auto=format&fit=crop"
+    },
+    {
+      name: "Marcus Thorne",
+      role: "Family Traveler",
+      content: "The real-time slot updates saved our family trip. We could book exactly when the museum was less crowded.",
+      rating: 5,
+      img: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=150&h=150&auto=format&fit=crop"
+    },
+    {
+      name: "Elena Rodriguez",
+      role: "Cultural Blogger",
+      content: "A premium experience from start to finish. The digital ticket on my phone worked flawlessly at the gate.",
+      rating: 5,
+      img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=150&h=150&auto=format&fit=crop"
+    }
+  ];
+
+
+  const CountUp = ({ to, duration = 2, suffix = "", decimals = 0 }) => {
+    const count = useMotionValue(0);
+    const rounded = useTransform(count, (latest) => {
+      return latest.toLocaleString(undefined, {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      });
+    });
+    const ref = React.useRef(null);
+    const isInView = useInView(ref, { once: true });
+
+    useEffect(() => {
+      if (isInView) {
+        animate(count, to, { duration });
+      }
+    }, [isInView, to, duration, count]);
+
+    return <motion.span ref={ref}>{rounded}</motion.span>;
+  };
+
+
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white relative">
+      <MouseSpotlight />
+      
+      {/* Background Grid Pattern */}
+      <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-0" 
+           style={{ backgroundImage: 'radial-gradient(circle, #D9A048 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center pt-24 pb-12 lg:pt-32 lg:pb-24 overflow-hidden">
         {/* Background Image with Overlay */}
@@ -56,6 +156,60 @@ const Home = () => {
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-museum-dark via-museum-dark/70 to-transparent" />
+          
+          {/* Floating Particles */}
+          <div className="absolute inset-0 pointer-events-none">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                animate={{
+                  y: [0, -100, 0],
+                  x: [0, Math.random() * 50 - 25, 0],
+                  opacity: [0.1, 0.3, 0.1],
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  duration: 10 + i * 2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="absolute"
+                style={{
+                  top: `${Math.random() * 100}%`,
+                  left: `${Math.random() * 100}%`,
+                }}
+              >
+                <Sparkles className="text-museum-gold/30 w-8 h-8" />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Floating Museum Symbols */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {[Landmark, Sparkles, Bot].map((Icon, i) => (
+              <motion.div
+                key={i}
+                animate={{
+                  y: [0, -60, 0],
+                  rotate: [0, 15, -15, 0],
+                  opacity: [0.03, 0.08, 0.03],
+                  scale: [1, 1.1, 1]
+                }}
+                transition={{
+                  duration: 12 + i * 4,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="absolute text-museum-gold hidden xl:block"
+                style={{
+                  top: `${15 + i * 30}%`,
+                  right: `${5 + i * 12}%`,
+                }}
+              >
+                <Icon className="w-64 h-64" />
+              </motion.div>
+            ))}
+          </div>
         </div>
 
         <div className="container mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -130,10 +284,12 @@ const Home = () => {
                 </div>
               </div>
               <div>
-                <p className="text-white font-bold text-lg leading-none mb-1">Join thousands of happy visitors</p>
+                <p className="text-white font-bold text-lg leading-none mb-1">
+                  <span className="text-museum-gold tabular-nums">{visitorCount.toLocaleString()}</span> happy visitors
+                </p>
                 <div className="flex items-center gap-1">
                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-museum-gold text-museum-gold" />)}
-                  <span className="text-gray-400 text-sm ml-2">4.9/5 Average Rating</span>
+                  <span className="text-gray-400 text-sm ml-2">4.9/5 Live Rating</span>
                 </div>
               </div>
             </motion.div>
@@ -182,9 +338,45 @@ const Home = () => {
         </div>
       </section>
 
+      {/* Live Ticker */}
+      <div className="bg-museum-gold/10 border-y border-museum-gold/10 overflow-hidden py-3">
+        <motion.div 
+          animate={{ x: ["0%", "-100%"] }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="flex whitespace-nowrap gap-20 items-center"
+        >
+          {[...liveEvents, ...liveEvents].map((event, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-museum-dark font-black text-sm uppercase tracking-widest">{event}</span>
+            </div>
+          ))}
+        </motion.div>
+      </div>
+
       {/* Why Choose Us Section */}
-      <section className="py-32 bg-gray-50/50">
-        <div className="container mx-auto px-6">
+      <section className="py-32 bg-gray-50/30 relative overflow-hidden">
+        {/* Live Background Blobs */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            x: [0, 50, 0],
+            y: [0, 30, 0]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-0 -left-20 w-[600px] h-[600px] bg-museum-gold/5 blur-[120px] rounded-full pointer-events-none"
+        />
+        <motion.div 
+          animate={{ 
+            scale: [1.2, 1, 1.2],
+            x: [0, -50, 0],
+            y: [0, -30, 0]
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-0 -right-20 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"
+        />
+
+        <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mb-20">
             <span className="text-museum-gold font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Our Advantage</span>
             <h2 className="text-4xl md:text-6xl font-black text-museum-dark leading-tight">Smart Ticketing, <br />Better Experience</h2>
@@ -213,8 +405,80 @@ const Home = () => {
               </motion.div>
             ))}
           </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 mt-20 border-t border-gray-100 pt-20">
+            {stats.map((stat, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="text-center"
+              >
+                <h4 className="text-4xl md:text-5xl font-black text-museum-dark mb-2 tracking-tighter">
+                  <CountUp to={stat.value} decimals={stat.decimals} />
+                  {stat.suffix}
+                </h4>
+                <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">{stat.label}</p>
+              </motion.div>
+            ))}
+          </div>
+
         </div>
       </section>
+
+      {/* Testimonials Section */}
+      <section className="py-32 bg-white relative overflow-hidden">
+        {/* Mesh Gradient Animation */}
+        <div className="absolute inset-0 pointer-events-none opacity-30">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] bg-[radial-gradient(circle_at_50%_50%,rgba(217,160,72,0.1),transparent_50%),radial-gradient(circle_at_80%_20%,rgba(59,130,246,0.05),transparent_40%)]"
+          />
+        </div>
+
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-museum-gold font-bold uppercase tracking-[0.2em] text-xs mb-4 block">Testimonials</span>
+            <h2 className="text-4xl md:text-6xl font-black text-museum-dark mb-6">What Our Visitors Say</h2>
+            <p className="text-gray-500 font-medium italic leading-relaxed">Hear from thousands of global explorers who have experienced the future of cultural discovery.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-gray-50 p-10 rounded-[2.5rem] border border-gray-100 relative group hover:bg-museum-dark transition-all duration-500"
+              >
+                <div className="flex gap-1 mb-6">
+                  {[...Array(t.rating)].map((_, j) => (
+                    <Star key={j} className="w-4 h-4 fill-museum-gold text-museum-gold" />
+                  ))}
+                </div>
+                <p className="text-gray-600 font-medium italic mb-8 group-hover:text-gray-300 transition-colors leading-relaxed">"{t.content}"</p>
+                <div className="flex items-center gap-4">
+                  <img src={t.img} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg" />
+                  <div>
+                    <h4 className="font-black text-gray-900 group-hover:text-white transition-colors leading-none mb-1">{t.name}</h4>
+                    <p className="text-xs text-museum-gold font-bold uppercase tracking-widest">{t.role}</p>
+                  </div>
+                </div>
+                <div className="absolute top-10 right-10 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity">
+                   <MessageSquare className="w-16 h-16 text-museum-dark group-hover:text-white" />
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
 
       {/* Floating Chatbot Trigger */}
       <Link to="/chat" className="fixed bottom-10 right-10 z-[100] group">

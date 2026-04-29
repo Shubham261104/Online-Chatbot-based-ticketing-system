@@ -44,6 +44,10 @@ export default function Booking() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const loggedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    if (loggedUser.name) {
+      setForm(prev => ({ ...prev, name: loggedUser.name, email: loggedUser.email }));
+    }
     setIsLoggedIn(!!localStorage.getItem('token'));
   }, []);
 
@@ -63,18 +67,27 @@ export default function Booking() {
     try {
       const res = await api.get(`/slots?date=${date}`);
       setSlots(res.data);
-      // Auto-select first available slot
+      // Auto-select first available slot if nothing is selected or current is sold out
       const firstAvail = res.data.find(s => s.status !== 'Sold Out');
-      if (firstAvail) setForm(f => ({ ...f, timeSlot: firstAvail.time }));
+      if (firstAvail && (!form.timeSlot || res.data.find(s => s.time === form.timeSlot)?.status === 'Sold Out')) {
+        setForm(f => ({ ...f, timeSlot: firstAvail.time }));
+      }
     } catch {
       setSlots(DEFAULT_SLOTS);
     } finally {
       setSlotsLoading(false);
     }
-  }, []);
+  }, [form.timeSlot]);
 
   useEffect(() => {
     fetchSlots(form.date);
+
+    // Real-time polling every 5 seconds
+    const interval = setInterval(() => {
+      fetchSlots(form.date);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [form.date, fetchSlots]);
 
   const totalPrice = form.adults * form.ticketType.adultPrice + form.children * form.ticketType.childPrice;
@@ -161,9 +174,18 @@ export default function Booking() {
         <div className="pt-4 border-t border-gray-100 space-y-2">
           <div className="flex justify-between items-center text-xs text-gray-400 uppercase tracking-widest mb-1">
             <span>Price Breakdown</span>
-            <span className="flex items-center gap-1 text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-              <Zap className="w-2 h-2 fill-current" /> Live
-            </span>
+            <div className="flex flex-col items-end">
+              <span className="flex items-center gap-1.5 text-[10px] text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100/50 shadow-sm">
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-600"></span>
+                </span>
+                LIVE
+              </span>
+              <span className="text-[8px] font-bold text-gray-300 uppercase tracking-tighter mt-1">
+                Updated {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
           </div>
           <div className="flex justify-between"><span>Tickets</span><span>₹{totalPrice}</span></div>
           <div className="flex justify-between"><span>Fee</span><span>₹{fee}</span></div>
@@ -171,11 +193,11 @@ export default function Booking() {
             <span className="font-bold">Total Amount</span>
             <motion.span 
               key={grand}
-              initial={{ scale: 1.1, color: '#2563eb' }}
+              initial={{ scale: 1.2, color: '#2563eb' }}
               animate={{ scale: 1, color: '#2563eb' }}
               className="text-xl font-black"
             >
-              ₹{grand}
+              ₹{grand.toLocaleString()}
             </motion.span>
           </div>
         </div>
@@ -277,7 +299,13 @@ export default function Booking() {
                         )}
                         <h5 className="font-bold text-sm text-gray-900 mb-1">{slot.time}</h5>
                         <div className="flex justify-between items-center">
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/50 ${statusColor[slot.status]}`}>{slot.status}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            <span className={`text-[10px] font-bold ${statusColor[slot.status]}`}>{slot.status}</span>
+                          </div>
                           <span className="text-[10px] font-bold text-gray-400">{slot.remaining} left</span>
                         </div>
                       </button>

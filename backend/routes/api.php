@@ -10,6 +10,7 @@ use App\Http\Controllers\PaymentController;
 // Public auth routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/google-register', [AuthController::class, 'googleRegister']);
 
 // Public booking & payment (no login required)
 Route::get('/slots', [TicketController::class, 'getSlots']);

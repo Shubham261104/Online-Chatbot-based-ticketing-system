@@ -20,11 +20,25 @@ const Dashboard = () => {
     try {
       const res = await api.get('/tickets');
       setTickets(res.data);
-    } catch (err) {}
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        // Handled by interceptor, but we can clear state here
+        setTickets([]);
+      }
+    }
   };
 
   useEffect(() => {
-    if (token) fetchHistory();
+    if (token) {
+      fetchHistory();
+      
+      // Polling for real-time updates every 10 seconds
+      const interval = setInterval(() => {
+        fetchHistory();
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }
   }, [token]);
 
   const handleLookup = async (e) => {
@@ -105,7 +119,16 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* History */}
           <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-2xl font-black text-slate-900">Your Tickets</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-black text-slate-900">Your Tickets</h2>
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100/50">
+                <span className="flex h-1.5 w-1.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600"></span>
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Live Updates</span>
+              </div>
+            </div>
             {tickets.length > 0 ? (
                <div className="space-y-4">
                   {tickets.map(t => (
@@ -115,7 +138,7 @@ const Dashboard = () => {
                               <Ticket className="h-6 w-6" />
                            </div>
                            <div>
-                              <h4 className="font-bold text-slate-800 tracking-tight">Museum Entry Ticket</h4>
+                              <h4 className="font-bold text-slate-800 tracking-tight">{t.event_name || 'Museum Entry Ticket'}</h4>
                               <p className="text-xs font-bold text-slate-400 flex items-center gap-2">
                                 <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">ID: #{t.id}</span>
                                 <Calendar className="h-3 w-3" /> {t.date} • {t.time_slot}

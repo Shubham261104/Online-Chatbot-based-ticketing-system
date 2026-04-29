@@ -9,6 +9,7 @@ class Ticket extends Model
     protected $fillable = [
         'visitor_name',
         'visitor_email',
+        'event_name',
         'date',
         'time_slot',
         'adults',

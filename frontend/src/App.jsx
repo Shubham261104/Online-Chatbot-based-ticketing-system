@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
+
 import Home from './pages/Home';
 import Booking from './pages/Booking';
 import ShowsEvents from './pages/ShowsEvents';
@@ -13,7 +15,12 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import ChatbotPage from './pages/ChatbotPage';
 import Profile from './pages/Profile';
+import EventBooking from './pages/EventBooking';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import CookiePolicy from './pages/CookiePolicy';
 import { ToastContainer } from 'react-toastify';
+
 import 'react-toastify/dist/ReactToastify.css';
 
 const AppContent = () => {
@@ -22,7 +29,9 @@ const AppContent = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
       <Navbar />
+
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -36,7 +45,12 @@ const AppContent = () => {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/chat" element={<ChatbotPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/event-booking" element={<EventBooking />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
         </Routes>
+
       </main>
       {!hideFooter && <Footer />}
       <ToastContainer position="bottom-right" />

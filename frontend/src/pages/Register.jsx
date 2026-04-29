@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, UserPlus, Loader2, Landmark, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Loader2, Landmark, Eye, EyeOff, X } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/api';
 import signupBg from '../assets/signup-bg.png';
 
@@ -11,6 +11,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -18,6 +19,13 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword) {
       return toast.error('Passwords do not match');
     }
+
+    // Password strength check
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      return toast.error('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character');
+    }
+
     
     setLoading(true);
     try {
@@ -32,6 +40,23 @@ const Register = () => {
       setLoading(false);
     }
   };
+
+  const handleGoogleSignup = async (mockUser) => {
+    setShowGoogleModal(false);
+    setLoading(true);
+    try {
+      const res = await api.post('/google-register', mockUser);
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      toast.success(`Welcome ${res.data.user.name}! Signed in as ${res.data.user.email}`);
+      navigate('/');
+    } catch (err) {
+      toast.error('Google Signup failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -124,7 +149,26 @@ const Register = () => {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
+                  <p className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${formData.password.length >= 8 ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <span className={`w-1 h-1 rounded-full ${formData.password.length >= 8 ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    8+ Characters
+                  </p>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${/[A-Z]/.test(formData.password) ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <span className={`w-1 h-1 rounded-full ${/[A-Z]/.test(formData.password) ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    Uppercase
+                  </p>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${/\d/.test(formData.password) ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <span className={`w-1 h-1 rounded-full ${/\d/.test(formData.password) ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    Number
+                  </p>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 ${/[@$!%*?&]/.test(formData.password) ? 'text-emerald-500' : 'text-gray-400'}`}>
+                    <span className={`w-1 h-1 rounded-full ${/[@$!%*?&]/.test(formData.password) ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                    Special Char
+                  </p>
+                </div>
               </div>
+
 
               <div>
                 <label className="block text-xs font-black text-gray-400 mb-2 uppercase tracking-widest ml-1">Confirm Password</label>
@@ -169,10 +213,16 @@ const Register = () => {
               <div className="relative flex justify-center text-xs"><span className="px-4 bg-white text-gray-400 font-bold uppercase tracking-widest">OR</span></div>
             </div>
 
-            <button className="w-full py-4 border border-gray-200 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition-all">
+            <button 
+              type="button"
+              onClick={() => setShowGoogleModal(true)}
+              disabled={loading}
+              className="w-full py-4 border border-gray-200 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-gray-50 transition-all disabled:opacity-50"
+            >
                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
                Sign up with Google
             </button>
+
 
             <div className="mt-8 text-center text-gray-500 font-medium">
               Already have an account? <Link to="/login" className="text-blue-600 font-black hover:underline ml-1">Login</Link>
@@ -180,6 +230,72 @@ const Register = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Google Account Picker Modal Simulation */}
+      <AnimatePresence>
+        {showGoogleModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGoogleModal(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" 
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 text-center border-b border-gray-50">
+                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-8 h-8 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900">Choose an account</h3>
+                <p className="text-gray-500 text-sm mt-1">to continue to Museum Ticketing</p>
+              </div>
+              
+              <div className="p-2">
+                {[
+                  { name: 'Shubham Kumar', email: 'shubham.kumar@gmail.com', img: 'SK' },
+                  { name: 'Test Explorer', email: 'explorer.test@gmail.com', img: 'TE' },
+                ].map((acc) => (
+                  <button 
+                    key={acc.email}
+                    onClick={() => handleGoogleSignup(acc)}
+                    className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors text-left group"
+                  >
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                      {acc.img}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{acc.name}</p>
+                      <p className="text-xs text-gray-500">{acc.email}</p>
+                    </div>
+                  </button>
+                ))}
+                
+                <button 
+                  onClick={() => {
+                    const name = prompt("Enter Name:");
+                    const email = prompt("Enter Email:");
+                    if(name && email) handleGoogleSignup({ name, email });
+                  }}
+                  className="w-full flex items-center gap-4 p-4 hover:bg-slate-50 transition-colors text-left border-t border-gray-50"
+                >
+                  <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400">
+                    <UserPlus className="w-5 h-5" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-600">Use another account</p>
+                </button>
+              </div>
+              
+              <div className="p-6 bg-slate-50 text-[10px] text-gray-400 leading-relaxed">
+                To continue, Google will share your name, email address, language preference, and profile picture with Museum Ticketing.
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

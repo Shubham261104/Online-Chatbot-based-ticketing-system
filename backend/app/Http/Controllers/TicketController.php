@@ -49,11 +49,12 @@ class TicketController extends Controller
         $ticket = Ticket::create([
             'visitor_name' => $request->name,
             'visitor_email' => $request->email,
+            'event_name' => $request->event_name ?? null,
             'date' => $request->date,
             'time_slot' => $request->timeSlot,
             'adults' => $request->adults,
             'children' => $request->children,
-            'total_price' => $totalPrice,
+            'total_price' => $request->total_price ?? $totalPrice,
             'status' => 'pending',
             'razorpay_order_id' => $orderId,
             'user_id' => auth('api')->id() ?? null

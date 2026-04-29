@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Landmark, Menu, X, LogOut, User, Ticket, Bot, Calendar, Phone, Info, Bell, Globe, ChevronDown } from 'lucide-react';
+import { Landmark, Menu, X, LogOut, User, Ticket, Bot, Calendar, Phone, Info, Bell, Globe, ChevronDown, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-toastify';
+
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,18 +21,28 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Book Ticket', path: '/booking' },
-    { name: 'Shows & Events', path: '/shows' },
+    { name: 'Buy Tickets', path: '/booking' },
+    { name: 'Shows', path: '/shows' },
     { name: 'Chatbot', path: '/chat' },
     { name: 'My Bookings', path: '/dashboard' },
-    { name: 'About Us', path: '/about' },
+    { name: 'About', path: '/about' },
     { name: 'Contact', path: '/contact' },
   ];
 
+  if (user && user.role === 'admin') {
+    navLinks.push({ name: 'Admin', path: '/admin' });
+  }
+
   const handleLogout = () => {
     localStorage.clear();
+    toast.success('Logged out successfully');
     navigate('/login');
   };
+
+  const handleComingSoon = () => {
+    toast.info('This feature is coming soon!');
+  };
+
 
   const isHomePage = location.pathname === '/';
 
@@ -53,13 +65,13 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
-            <div className="flex items-center space-x-6">
+          <div className="hidden lg:flex items-center space-x-10">
+            <div className="flex items-center space-x-7">
               {navLinks.map((link) => (
                 <Link 
                   key={link.name} 
                   to={link.path}
-                  className={`text-sm font-semibold transition-all relative group ${
+                  className={`text-sm font-bold tracking-wide transition-all relative group py-2 ${
                     location.pathname === link.path ? 'text-museum-gold' : 'text-gray-300 hover:text-white'
                   }`}
                 >
@@ -67,7 +79,7 @@ const Navbar = () => {
                   {location.pathname === link.path && (
                     <motion.div 
                       layoutId="navUnderline"
-                      className="absolute -bottom-1 left-0 right-0 h-0.5 bg-museum-gold"
+                      className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-museum-gold rounded-full"
                     />
                   )}
                 </Link>
@@ -75,51 +87,52 @@ const Navbar = () => {
             </div>
 
             {token ? (
-              <div className="flex items-center gap-6">
-                <button className="text-gray-400 hover:text-white transition-colors relative">
+              <div className="flex items-center gap-5 border-l border-white/10 pl-8">
+                <button 
+                  onClick={handleComingSoon}
+                  className="text-gray-400 hover:text-white transition-colors relative p-1.5 hover:bg-white/5 rounded-lg"
+                >
                   <Bell className="h-5 w-5" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-museum-gold rounded-full border-2 border-museum-dark" />
                 </button>
-                
-                <div className="flex items-center gap-2 text-gray-400 font-bold text-xs uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
-                  <Globe className="w-4 h-4" />
-                  <span>EN</span>
-                  <ChevronDown className="w-3 h-3" />
-                </div>
 
-                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 bg-white/10 rounded-full border border-white/20 hover:bg-white/20 transition-all">
-                  <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg">
+                <Link to="/profile" className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/10 hover:border-museum-gold/50 hover:bg-white/10 transition-all group">
+                  <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg group-hover:scale-110 transition-transform">
                     {user.name?.charAt(0)}
                   </div>
-                  <span className="text-sm font-bold text-white">{user.name?.split(' ')[0]} {user.name?.split(' ')[1]?.charAt(0)}.</span>
+                  <div className="flex flex-col items-start -space-y-1">
+                    <span className="text-xs font-black text-white">{user.name?.split(' ')[0]}</span>
+                    <span className="text-[9px] text-museum-gold font-bold uppercase tracking-tighter">Profile</span>
+                  </div>
                 </Link>
-                <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-400 transition-colors">
+                <button 
+                  onClick={handleLogout} 
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                  title="Logout"
+                >
                   <LogOut className="h-5 w-5" />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-8">
-                 <div className="flex items-center gap-2 text-gray-400 font-bold text-xs uppercase tracking-widest cursor-pointer hover:text-white transition-colors">
-                    <Globe className="w-4 h-4" />
-                    <span>EN</span>
-                    <ChevronDown className="w-3 h-3" />
-                 </div>
+              <div className="flex items-center gap-8 border-l border-white/10 pl-8">
                  <Link to="/login">
-                   <button className="flex items-center gap-2 px-6 py-2.5 bg-transparent border border-white/30 rounded-full text-sm font-bold text-white hover:bg-white/10 transition-all group">
-                     <User className="h-4 w-4 text-museum-gold group-hover:scale-110 transition-transform" />
-                     Login / Sign Up
+                   <button className="flex items-center gap-2.5 px-6 py-2.5 bg-museum-gold text-museum-dark rounded-xl text-sm font-black hover:bg-white hover:scale-105 transition-all shadow-[0_10px_20px_rgba(217,160,72,0.2)] group">
+                     <User className="h-4 w-4" />
+                     LOGIN / SIGN UP
                    </button>
                  </Link>
               </div>
             )}
           </div>
 
+
           {/* Mobile Toggle */}
-          <div className="md:hidden">
-             <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-white bg-white/10 rounded-lg">
-               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <div className="lg:hidden">
+             <button onClick={() => setIsOpen(!isOpen)} className="p-2.5 text-white bg-white/10 rounded-xl border border-white/10 shadow-lg active:scale-95 transition-transform">
+               {isOpen ? <X className="h-6 w-6 text-museum-gold" /> : <Menu className="h-6 w-6" />}
              </button>
           </div>
+
         </div>
       </div>
 
@@ -130,7 +143,7 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-museum-dark border-b border-white/10 p-6 space-y-4 md:hidden shadow-2xl"
+            className="absolute top-full left-0 right-0 bg-museum-dark border-b border-white/10 p-6 space-y-4 lg:hidden shadow-2xl"
           >
             {navLinks.map((link) => (
               <Link 
