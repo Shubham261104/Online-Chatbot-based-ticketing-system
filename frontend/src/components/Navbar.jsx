@@ -3,11 +3,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Landmark, Menu, X, LogOut, User, Ticket, Bot, Calendar, Phone, Info, Bell, Globe, ChevronDown, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
-
+import api from '../api/api';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token');
@@ -16,8 +18,34 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
+    if (token) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        clearInterval(interval);
+      };
+    }
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [token]);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/notifications');
+      setNotifications(res.data);
+    } catch (err) {
+      console.error('Failed to fetch notifications', err);
+    }
+  };
+
+  const markAsRead = async (id) => {
+    try {
+      await api.post(`/notifications/${id}/read`);
+      setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: 1 } : n));
+    } catch (err) {
+      console.error('Failed to mark notification as read');
+    }
+  };
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -33,16 +61,13 @@ const Navbar = () => {
     navLinks.push({ name: 'Admin', path: '/admin' });
   }
 
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   const handleLogout = () => {
     localStorage.clear();
     toast.success('Logged out successfully');
     navigate('/login');
   };
-
-  const handleComingSoon = () => {
-    toast.info('This feature is coming soon!');
-  };
-
 
   const isHomePage = location.pathname === '/';
 
@@ -88,13 +113,57 @@ const Navbar = () => {
 
             {token ? (
               <div className="flex items-center gap-5 border-l border-white/10 pl-8">
-                <button 
-                  onClick={handleComingSoon}
-                  className="text-gray-400 hover:text-white transition-colors relative p-1.5 hover:bg-white/5 rounded-lg"
-                >
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-museum-gold rounded-full border-2 border-museum-dark" />
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsNotifOpen(!isNotifOpen)}
+                    className="text-gray-400 hover:text-white transition-colors relative p-1.5 hover:bg-white/5 rounded-lg"
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-museum-dark animate-pulse" />
+                    )}
+                  </button>
+
+                  <AnimatePresence>
+                    {isNotifOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 mt-4 w-80 bg-museum-dark border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                      >
+                        <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                          <span className="text-xs font-black text-white uppercase tracking-widest">Notifications</span>
+                          {unreadCount > 0 && <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black">{unreadCount} New</span>}
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                          {notifications.length > 0 ? (
+                            notifications.map((n) => (
+                              <div 
+                                key={n.id} 
+                                className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer relative ${!n.is_read ? 'bg-museum-gold/5' : ''}`}
+                                onClick={() => markAsRead(n.id)}
+                              >
+                                <div className="flex justify-between items-start mb-1">
+                                  <h4 className={`text-xs font-bold ${!n.is_read ? 'text-museum-gold' : 'text-white'}`}>{n.title}</h4>
+                                  <span className="text-[9px] text-gray-500 font-medium">{new Date(n.created_at).toLocaleDateString()}</span>
+                                </div>
+                                <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2">{n.message}</p>
+                                {!n.is_read && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-museum-gold rounded-full" />}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-8 text-center">
+                              <Bell className="h-8 w-8 text-gray-600 mx-auto mb-3 opacity-20" />
+                              <p className="text-xs text-gray-500 font-bold">No notifications yet</p>
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={() => setIsNotifOpen(false)} className="w-full py-3 bg-white/5 text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-white transition-colors">Close Panel</button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
                 <Link to="/profile" className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/10 hover:border-museum-gold/50 hover:bg-white/10 transition-all group">
                   <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg group-hover:scale-110 transition-transform">

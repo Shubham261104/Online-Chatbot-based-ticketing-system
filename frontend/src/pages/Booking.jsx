@@ -1,15 +1,18 @@
+// Force build trigger: 2026-05-12T12:44
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar, Users, Clock, CreditCard, CheckCircle, ChevronRight, ArrowLeft, Info, Ticket, Landmark, ShieldCheck, Zap, Bot, Languages, LogIn, RefreshCw } from 'lucide-react';
+import { Calendar, Users, Clock, CreditCard, CheckCircle, ChevronRight, ArrowLeft, Info, Ticket, Landmark, ShieldCheck, Zap, Bot, Languages, LogIn, RefreshCw, MapPin, QrCode, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
 import { toast } from 'react-toastify';
 import TicketModal from '../components/TicketModal';
+import MuseumSelector from '../components/MuseumSelector';
+import { getMuseumInfo } from '../data/museumData';
 
 const TICKET_TYPES = [
-  { type: 'General', adultPrice: 200, childPrice: 100, desc: 'Standard museum access' },
-  { type: 'Premium', adultPrice: 400, childPrice: 200, desc: 'Includes guided tour' },
-  { type: 'VIP', adultPrice: 800, childPrice: 400, desc: 'All-access + lounge' },
+  { type: 'General', addCharge: 0, desc: 'Standard museum access' },
+  { type: 'Premium', addCharge: 150, desc: 'Includes guided tour & fast-track entry' },
+  { type: 'VIP', addCharge: 400, desc: 'All-access, VIP lounge & dedicated guide' },
 ];
 
 const DEFAULT_SLOTS = [
@@ -19,9 +22,11 @@ const DEFAULT_SLOTS = [
   { time: '01:30 PM - 03:00 PM', status: 'Available', remaining: 50 },
   { time: '03:00 PM - 04:30 PM', status: 'Available', remaining: 50 },
   { time: '04:30 PM - 06:00 PM', status: 'Available', remaining: 50 },
+  { time: '06:00 PM - 07:30 PM', status: 'Available', remaining: 50 },
+  { time: '07:30 PM - 09:00 PM', status: 'Available', remaining: 50 },
 ];
 
-const statusColor = { Available: 'text-green-500', 'Few Tickets Left': 'text-orange-500', 'Sold Out': 'text-red-500' };
+const statusColor = { Available: 'text-green-500', 'Few Tickets Left': 'text-orange-500', 'Sold Out': 'text-red-500', 'Time Passed': 'text-gray-400' };
 
 const steps = [
   { id: 1, name: 'Visit Details', sub: 'Date & Time', icon: <Calendar className="w-5 h-5" /> },
@@ -34,32 +39,62 @@ const steps = [
 const today = new Date().toISOString().split('T')[0];
 
 export default function Booking() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const location = useLocation();
+  const chatbotData = location.state?.bookingData;
+  
   const [loading, setLoading] = useState(false);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [confirmedTicket, setConfirmedTicket] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [slots, setSlots] = useState(DEFAULT_SLOTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMuseumModalOpen, setIsMuseumModalOpen] = useState(false);
+  const [selectedMuseum, setSelectedMuseum] = useState(null);
+  const [fee, setFee] = useState(50);
+  const [paymentMethod, setPaymentMethod] = useState('card');
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (chatbotData?.museum) {
+      setSelectedMuseum(chatbotData.museum);
+    }
     const loggedUser = JSON.parse(localStorage.getItem('user') || '{}');
     if (loggedUser.name) {
-      setForm(prev => ({ ...prev, name: loggedUser.name, email: loggedUser.email }));
+      setForm(prev => ({ 
+        ...prev, 
+        name: prev.name || loggedUser.name, 
+        email: prev.email || loggedUser.email 
+      }));
     }
     setIsLoggedIn(!!localStorage.getItem('token'));
-  }, []);
+    fetchSettings();
+  }, [chatbotData]);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await api.get('/admin/settings');
+      if (res.data.booking_fee) setFee(Number(res.data.booking_fee));
+    } catch (err) {
+      console.error("Using default fee");
+    }
+  };
 
   const [form, setForm] = useState({
-    date: today,
-    timeSlot: DEFAULT_SLOTS[0].time,
-    adults: 1,
-    children: 0,
+    date: chatbotData?.date || today,
+    timeSlot: chatbotData?.timeSlot || DEFAULT_SLOTS[0].time,
+    adults: chatbotData?.adults ?? 1,
+    children: chatbotData?.children ?? 0,
+    students: chatbotData?.students ?? 0,
+    females: chatbotData?.females ?? 0,
+    seniors: chatbotData?.seniors ?? 0,
+    foreigners: chatbotData?.foreigners ?? 0,
     ticketType: TICKET_TYPES[0],
     name: '',
     email: '',
   });
+
+  // If coming from chatbot, we might want to skip to payment or summary step
+  const [currentStep, setCurrentStep] = useState(chatbotData ? 4 : 1);
 
   // Fetch real-time slot availability whenever date changes
   const fetchSlots = useCallback(async (date) => {
@@ -67,9 +102,9 @@ export default function Booking() {
     try {
       const res = await api.get(`/slots?date=${date}`);
       setSlots(res.data);
-      // Auto-select first available slot if nothing is selected or current is sold out
-      const firstAvail = res.data.find(s => s.status !== 'Sold Out');
-      if (firstAvail && (!form.timeSlot || res.data.find(s => s.time === form.timeSlot)?.status === 'Sold Out')) {
+      // Auto-select first available slot if nothing is selected or current is sold out/time passed
+      const firstAvail = res.data.find(s => s.status !== 'Sold Out' && s.status !== 'Time Passed');
+      if (firstAvail && (!form.timeSlot || res.data.find(s => s.time === form.timeSlot)?.status === 'Sold Out' || res.data.find(s => s.time === form.timeSlot)?.status === 'Time Passed')) {
         setForm(f => ({ ...f, timeSlot: firstAvail.time }));
       }
     } catch {
@@ -90,8 +125,29 @@ export default function Booking() {
     return () => clearInterval(interval);
   }, [form.date, fetchSlots]);
 
-  const totalPrice = form.adults * form.ticketType.adultPrice + form.children * form.ticketType.childPrice;
-  const fee = 20;
+  const selectedSlotData = slots.find(s => s.time === form.timeSlot);
+  const currentPrice = selectedSlotData ? Number(selectedSlotData.price) : 500;
+  
+  const multipliers = {
+    adults: 1.0,
+    children: 0.5,
+    students: 0.5,
+    females: 0.8,
+    seniors: 0.7,
+    foreigners: 2.0
+  };
+
+  const ticketAddon = form.ticketType.addCharge || 0;
+  const effectivePrice = currentPrice + ticketAddon;
+
+  const totalPrice = 
+    (form.adults * effectivePrice * multipliers.adults) +
+    (form.children * effectivePrice * multipliers.children) +
+    (form.students * effectivePrice * multipliers.students) +
+    (form.females * effectivePrice * multipliers.females) +
+    (form.seniors * effectivePrice * multipliers.seniors) +
+    (form.foreigners * effectivePrice * multipliers.foreigners);
+    
   const grand = totalPrice + fee;
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
@@ -100,6 +156,11 @@ export default function Booking() {
     if (!localStorage.getItem('token')) {
       toast.error('Please login first to book tickets!');
       navigate('/login?redirect=/booking');
+      return;
+    }
+    if (!selectedMuseum) {
+      toast.error('Please choose a museum first!');
+      setCurrentStep(1);
       return;
     }
     if (!form.name.trim() || !form.email.trim()) {
@@ -114,8 +175,14 @@ export default function Booking() {
         timeSlot: form.timeSlot,
         adults: form.adults,
         children: form.children,
+        students: form.students,
+        females: form.females,
+        seniors: form.seniors,
+        foreigners: form.foreigners,
         name: form.name,
         email: form.email,
+        event_name: selectedMuseum,
+        ticket_type: form.ticketType.type,
       });
 
       const ticket = bookRes.data.ticket;
@@ -124,7 +191,7 @@ export default function Booking() {
       // Step 2: Record simulated payment
       await api.post('/payment', {
         ticket_id: ticket.id,
-        amount: grand,
+        amount: ticket.total_price,
         payment_status: 'successful',
         method: 'simulated',
         transaction_id: orderId,
@@ -169,7 +236,23 @@ export default function Booking() {
       <div className="space-y-4 text-sm font-bold text-gray-700">
         <div className="flex items-center gap-3"><Calendar className="w-4 h-4 text-gray-400" /><span>{form.date}</span></div>
         <div className="flex items-center gap-3"><Clock className="w-4 h-4 text-gray-400" /><span>{form.timeSlot}</span></div>
-        <div className="flex items-center gap-3"><Users className="w-4 h-4 text-gray-400" /><span>{form.adults} Adult{form.adults > 1 ? 's' : ''}{form.children > 0 ? `, ${form.children} Child${form.children > 1 ? 'ren' : ''}` : ''}</span></div>
+        <div className="flex items-center gap-3">
+          <Landmark className="w-4 h-4 text-gray-400" />
+          <span className={selectedMuseum ? "text-blue-600 font-black" : "text-gray-400 italic"}>
+            {selectedMuseum || 'No Museum Selected'}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <Users className="w-4 h-4 text-gray-400" />
+          <div className="flex flex-wrap gap-x-2 gap-y-1">
+            {form.adults > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.adults} Adult</span>}
+            {form.children > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.children} Child</span>}
+            {form.students > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.students} Student</span>}
+            {form.females > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.females} Female</span>}
+            {form.seniors > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.seniors} Senior</span>}
+            {form.foreigners > 0 && <span className="bg-slate-50 px-2 py-0.5 rounded border border-slate-100">{form.foreigners} Foreigner</span>}
+          </div>
+        </div>
         <div className="flex items-center gap-3"><Ticket className="w-4 h-4 text-gray-400" /><span>{form.ticketType.type}</span></div>
         <div className="pt-4 border-t border-gray-100 space-y-2">
           <div className="flex justify-between items-center text-xs text-gray-400 uppercase tracking-widest mb-1">
@@ -187,8 +270,34 @@ export default function Booking() {
               </span>
             </div>
           </div>
-          <div className="flex justify-between"><span>Tickets</span><span>₹{totalPrice}</span></div>
-          <div className="flex justify-between"><span>Fee</span><span>₹{fee}</span></div>
+          <div className="flex justify-between">
+            <span className="text-gray-500 font-medium">Base Tickets</span>
+            <span>₹{(
+              (form.adults * currentPrice * multipliers.adults) +
+              (form.children * currentPrice * multipliers.children) +
+              (form.students * currentPrice * multipliers.students) +
+              (form.females * currentPrice * multipliers.females) +
+              (form.seniors * currentPrice * multipliers.seniors) +
+              (form.foreigners * currentPrice * multipliers.foreigners)
+            ).toLocaleString()}</span>
+          </div>
+          {form.ticketType.addCharge > 0 && (
+            <div className="flex justify-between text-blue-600">
+              <span className="font-medium">{form.ticketType.type} Addon</span>
+              <span>+₹{(totalPrice - (
+                (form.adults * currentPrice * multipliers.adults) +
+                (form.children * currentPrice * multipliers.children) +
+                (form.students * currentPrice * multipliers.students) +
+                (form.females * currentPrice * multipliers.females) +
+                (form.seniors * currentPrice * multipliers.seniors) +
+                (form.foreigners * currentPrice * multipliers.foreigners)
+              )).toLocaleString()}</span>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <span className="text-gray-500 font-medium">Convenience Fee</span>
+            <span>₹{fee}</span>
+          </div>
           <div className="flex justify-between text-base text-blue-600 pt-2 border-t border-gray-100">
             <span className="font-bold">Total Amount</span>
             <motion.span 
@@ -204,7 +313,14 @@ export default function Booking() {
       </div>
       {currentStep < 4 && (
         <button
-          onClick={() => setCurrentStep(4)}
+          onClick={() => {
+            if (!selectedMuseum) {
+              toast.error('Please choose a museum first!');
+              setCurrentStep(1);
+            } else {
+              setCurrentStep(4);
+            }
+          }}
           className="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-200"
         >
           Proceed to Payment
@@ -259,8 +375,78 @@ export default function Booking() {
             {currentStep === 1 && (
               <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                 className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-gray-100">
-                <h2 className="text-2xl font-black text-gray-900 mb-1">1. Select Date & Time</h2>
-                <p className="text-gray-500 mb-8">Choose your preferred visit date and time slot</p>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 mb-1">1. Select Destination & Time</h2>
+                    <p className="text-gray-500">Choose your museum and preferred visit time</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsMuseumModalOpen(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-50 text-blue-600 font-black rounded-2xl hover:bg-blue-600 hover:text-white transition-all shadow-sm shrink-0"
+                  >
+                    <Landmark className="w-5 h-5" />
+                    {selectedMuseum ? 'Change Museum' : 'Choose Museum'}
+                  </button>
+                </div>
+
+                {selectedMuseum && (
+                  <div className="space-y-6 mb-8">
+                    <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl text-white shadow-lg shadow-blue-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                          <Landmark className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-widest text-blue-200">Selected Destination</p>
+                          <h4 className="text-lg font-black">{selectedMuseum}</h4>
+                        </div>
+                      </div>
+                      <div className="hidden sm:block">
+                        <CheckCircle className="w-8 h-8 text-blue-200 opacity-50" />
+                      </div>
+                    </div>
+
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-blue-50/50 rounded-3xl p-8 border border-blue-100/50"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <Info className="w-5 h-5 text-blue-600" />
+                        <h4 className="font-black text-slate-900 uppercase tracking-tighter">About the Museum</h4>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <p className="text-gray-600 font-medium leading-relaxed">
+                          {getMuseumInfo(selectedMuseum).desc}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-blue-100/50">
+                          <div>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Famous For</p>
+                            <p className="text-sm font-bold text-slate-800">{getMuseumInfo(selectedMuseum).famousFor}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Location</p>
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="text-sm font-bold text-slate-800">{getMuseumInfo(selectedMuseum).location}</p>
+                              <a 
+                                href={getMuseumInfo(selectedMuseum).mapUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 text-[10px] font-black text-blue-600 bg-white px-3 py-1.5 rounded-xl border border-blue-100 hover:bg-blue-600 hover:text-white transition-all shrink-0 shadow-sm"
+                              >
+                                <MapPin className="w-3 h-3" />
+                                SEE LOCATION
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
 
                 <div className="mb-6">
                   <label className="block text-sm font-bold text-gray-700 mb-3">Visit Date</label>
@@ -282,13 +468,13 @@ export default function Booking() {
                     {slots.map((slot, i) => (
                       <button
                         key={i}
-                        disabled={slot.status === 'Sold Out'}
+                        disabled={slot.status === 'Sold Out' || slot.status === 'Time Passed'}
                         onClick={() => set('timeSlot', slot.time)}
                         className={`p-5 rounded-2xl border text-left transition-all relative ${
                           form.timeSlot === slot.time
                             ? 'bg-white border-blue-600 shadow-xl ring-2 ring-blue-600 ring-offset-2'
-                            : slot.status === 'Sold Out'
-                            ? 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed'
+                            : (slot.status === 'Sold Out' || slot.status === 'Time Passed')
+                            ? 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed grayscale'
                             : 'bg-gray-50 border-transparent hover:border-gray-200'
                         }`}
                       >
@@ -300,11 +486,13 @@ export default function Booking() {
                         <h5 className="font-bold text-sm text-gray-900 mb-1">{slot.time}</h5>
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-1.5">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                            </span>
-                            <span className={`text-[10px] font-bold ${statusColor[slot.status]}`}>{slot.status}</span>
+                            {slot.status !== 'Time Passed' && slot.status !== 'Sold Out' && (
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                              </span>
+                            )}
+                            <span className={`text-[10px] font-bold ${statusColor[slot.status] || 'text-gray-400'}`}>{slot.status}</span>
                           </div>
                           <span className="text-[10px] font-bold text-gray-400">{slot.remaining} left</span>
                         </div>
@@ -334,20 +522,52 @@ export default function Booking() {
               <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}
                 className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-8 border border-gray-100">
                 <h2 className="text-2xl font-black text-gray-900 mb-1">2. Number of Visitors</h2>
-                <p className="text-gray-500 mb-8">Select how many adults and children will be visiting</p>
+                <p className="text-gray-500 mb-6">Select how many adults and children will be visiting</p>
 
-                {[{ label: 'Adults', key: 'adults', min: 1, note: '(Age 18+)' }, { label: 'Children', key: 'children', min: 0, note: '(Age 3-17, under 3 free)' }].map(({ label, key, min, note }) => (
-                  <div key={key} className="flex items-center justify-between bg-gray-50 rounded-2xl p-6 mb-4">
+                {/* Price Chart Section */}
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" />
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Live Pricing Chart</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {[
+                      { label: 'Adult', mult: 1.0, color: 'text-blue-600', bg: 'bg-white' },
+                      { label: 'Child/Student', mult: 0.5, color: 'text-emerald-600', bg: 'bg-white' },
+                      { label: 'Female', mult: 0.8, color: 'text-rose-600', bg: 'bg-white' },
+                      { label: 'Senior', mult: 0.7, color: 'text-amber-600', bg: 'bg-white' },
+                      { label: 'Foreigner', mult: 2.0, color: 'text-purple-600', bg: 'bg-white' },
+                    ].map((p, i) => (
+                      <div key={i} className={`${p.bg} p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col`}>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mb-0.5">{p.label}</span>
+                        <span className={`text-sm font-black ${p.color}`}>₹{currentPrice * p.mult}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {[
+                  { label: 'Adults', key: 'adults', min: 0, note: '(Age 18+)', mult: 1.0 }, 
+                  { label: 'Children', key: 'children', min: 0, note: '(Age 3-17)', mult: 0.5 },
+                  { label: 'Students', key: 'students', min: 0, note: '(With Valid ID)', mult: 0.5 },
+                  { label: 'Females', key: 'females', min: 0, note: '(Special Discount)', mult: 0.8 },
+                  { label: 'Senior Citizens', key: 'seniors', min: 0, note: '(Age 60+)', mult: 0.7 },
+                  { label: 'Foreigners', key: 'foreigners', min: 0, note: '(International)', mult: 2.0 },
+                ].map(({ label, key, min, note, mult }) => (
+                  <div key={key} className="flex items-center justify-between bg-gray-50 rounded-2xl p-6 mb-4 hover:bg-slate-100/50 transition-colors border border-transparent hover:border-slate-200">
                     <div>
-                      <p className="font-black text-gray-900">{label}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-black text-gray-900">{label}</p>
+                        <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded">₹{currentPrice * mult}</span>
+                      </div>
                       <p className="text-xs text-gray-400 font-medium">{note}</p>
                     </div>
                     <div className="flex items-center gap-4">
                       <button onClick={() => set(key, Math.max(min, form[key] - 1))}
-                        className="w-10 h-10 bg-white border border-gray-200 rounded-xl font-black text-xl text-gray-700 hover:border-blue-600 hover:text-blue-600 transition">−</button>
+                        className="w-10 h-10 bg-white border border-gray-200 rounded-xl font-black text-xl text-gray-700 hover:border-blue-600 hover:text-blue-600 transition shadow-sm">−</button>
                       <span className="text-2xl font-black text-gray-900 w-6 text-center">{form[key]}</span>
                       <button onClick={() => set(key, form[key] + 1)}
-                        className="w-10 h-10 bg-blue-600 rounded-xl font-black text-xl text-white hover:bg-blue-700 transition">+</button>
+                        className="w-10 h-10 bg-blue-600 rounded-xl font-black text-xl text-white hover:bg-blue-700 transition shadow-lg shadow-blue-200">+</button>
                     </div>
                   </div>
                 ))}
@@ -372,31 +592,98 @@ export default function Booking() {
                 <h2 className="text-2xl font-black text-gray-900 mb-1">3. Choose Ticket Type</h2>
                 <p className="text-gray-500 mb-8">Select the category that suits your visit</p>
 
+                {/* Visitor Selection Summary */}
+                <div className="flex items-center gap-4 bg-slate-50 border border-slate-100 p-5 rounded-2xl mb-8">
+                  <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center shrink-0">
+                    <Users className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Your Selections (Step 2)</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {form.adults > 0 && <span className="text-sm font-black text-slate-700">{form.adults} Adults</span>}
+                      {form.children > 0 && <span className="text-sm font-black text-slate-700">{form.children} Children</span>}
+                      {form.students > 0 && <span className="text-sm font-black text-slate-700">{form.students} Students</span>}
+                      {form.females > 0 && <span className="text-sm font-black text-slate-700">{form.females} Females</span>}
+                      {form.seniors > 0 && <span className="text-sm font-black text-slate-700">{form.seniors} Seniors</span>}
+                      {form.foreigners > 0 && <span className="text-sm font-black text-slate-700">{form.foreigners} Foreigners</span>}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ticket Type Selection */}
                 <div className="space-y-4 mb-8">
-                  {TICKET_TYPES.map(t => (
-                    <button key={t.type} onClick={() => set('ticketType', t)}
-                      className={`w-full p-6 rounded-2xl border text-left transition-all relative ${
-                        form.ticketType.type === t.type
-                          ? 'bg-white border-blue-600 shadow-xl ring-2 ring-blue-600 ring-offset-2'
-                          : 'bg-gray-50 border-transparent hover:border-gray-200'
-                      }`}>
-                      {form.ticketType.type === t.type && (
-                        <div className="absolute top-4 right-4 w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                          <div className="w-2.5 h-2.5 bg-white rounded-full" />
+                  <h3 className="text-sm font-bold text-gray-700 mb-3">Select Ticket Category</h3>
+                  {TICKET_TYPES.map((type) => (
+                    <button
+                      key={type.type}
+                      onClick={() => set('ticketType', type)}
+                      className={`w-full p-6 rounded-3xl border-2 text-left transition-all relative ${
+                        form.ticketType.type === type.type
+                          ? 'bg-blue-50 border-blue-600 shadow-lg'
+                          : 'bg-white border-gray-100 hover:border-gray-200'
+                      }`}
+                    >
+                      {form.ticketType.type === type.type && (
+                        <div className="absolute top-4 right-4 w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-4 h-4 text-white" />
                         </div>
                       )}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-black text-gray-900">{t.type}</h4>
-                          <p className="text-sm text-gray-500 mt-1">{t.desc}</p>
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                          form.ticketType.type === type.type ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-400'
+                        }`}>
+                          <Ticket className="w-6 h-6" />
                         </div>
-                        <div className="text-right">
-                          <p className="font-black text-blue-600 text-lg">₹{t.adultPrice}<span className="text-xs font-bold text-gray-400">/adult</span></p>
-                          <p className="text-xs text-gray-400 font-bold">₹{t.childPrice}/child</p>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-lg font-black text-gray-900">{type.type}</h4>
+                            {type.addCharge > 0 ? (
+                              <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                                +₹{type.addCharge} EXTRA
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200">
+                                BASE PRICE
+                              </span>
+                            )}
+                            {type.type === 'VIP' && (
+                              <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">POPULAR</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed">{type.desc}</p>
+                          <div className="mt-2 flex items-center gap-1.5">
+                             <p className="text-[10px] font-bold text-gray-400">Total per Adult:</p>
+                             <p className="text-sm font-black text-blue-600">₹{currentPrice + type.addCharge}</p>
+                          </div>
                         </div>
                       </div>
                     </button>
                   ))}
+                </div>
+
+                <div className="bg-amber-50 p-6 rounded-2xl border border-amber-100 mb-8">
+                   <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                         <Info className="w-5 h-5 text-amber-600" />
+                      </div>
+                      <h4 className="font-black text-amber-900 uppercase tracking-tighter">Dynamic Pricing Notice</h4>
+                   </div>
+                   <p className="text-sm font-bold text-amber-800 mb-6">Ticket prices vary based on your selected time slot and visitor type.</p>
+                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {[
+                        { label: 'Adults', mult: 1.0, color: 'text-blue-600', bg: 'bg-blue-50' },
+                        { label: 'Children', mult: 0.5, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                        { label: 'Students', mult: 0.5, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Females', mult: 0.8, color: 'text-rose-600', bg: 'bg-rose-50' },
+                        { label: 'Seniors', mult: 0.7, color: 'text-amber-600', bg: 'bg-amber-50' },
+                        { label: 'Foreigners', mult: 2.0, color: 'text-purple-600', bg: 'bg-purple-50' },
+                      ].map((item, i) => (
+                        <div key={i} className={`${item.bg} p-4 rounded-2xl border border-white/50 shadow-sm`}>
+                           <p className={`text-[10px] font-black ${item.color} uppercase tracking-widest mb-1`}>{item.label}</p>
+                           <p className="text-xl font-black text-slate-900">₹{currentPrice * item.mult}</p>
+                        </div>
+                      ))}
+                   </div>
                 </div>
 
                 <div className="flex justify-between">
@@ -440,6 +727,97 @@ export default function Booking() {
                       className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition font-medium text-gray-800"
                     />
                   </div>
+                </div>
+
+                <div className="mb-8">
+                  <label className="block text-sm font-bold text-gray-700 mb-4">Select Payment Method</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    {[
+                      { id: 'card', label: 'Card', icon: <CreditCard className="w-5 h-5" /> },
+                      { id: 'upi', label: 'UPI', icon: <Smartphone className="w-5 h-5" /> },
+                      { id: 'qr', label: 'QR Code', icon: <QrCode className="w-5 h-5" /> },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(m.id)}
+                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+                          paymentMethod === m.id
+                            ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
+                            : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'
+                        }`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          paymentMethod === m.id ? 'bg-blue-600 text-white' : 'bg-gray-100'
+                        }`}>
+                          {m.icon}
+                        </div>
+                        <span className="font-black text-sm">{m.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {paymentMethod === 'card' && (
+                      <motion.div
+                        key="card"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6 space-y-4"
+                      >
+                        <div>
+                          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Card Number</label>
+                          <input type="text" placeholder="**** **** **** ****" className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition font-mono" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Expiry</label>
+                            <input type="text" placeholder="MM / YY" className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">CVV</label>
+                            <input type="password" placeholder="***" className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {paymentMethod === 'upi' && (
+                      <motion.div
+                        key="upi"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="bg-slate-50 border border-slate-100 rounded-[2rem] p-6"
+                      >
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Enter UPI ID</label>
+                        <div className="flex gap-2">
+                          <input type="text" placeholder="username@upi" className="flex-1 px-5 py-3.5 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition" />
+                          <button type="button" className="px-6 py-3.5 bg-slate-900 text-white font-black text-xs rounded-2xl hover:bg-slate-800 transition shadow-sm">VERIFY</button>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {paymentMethod === 'qr' && (
+                      <motion.div
+                        key="qr"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="bg-slate-50 border border-slate-100 rounded-[2rem] p-8 flex flex-col items-center text-center"
+                      >
+                        <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 mb-6 relative group">
+                          <QrCode className="w-48 h-48 text-slate-800 transition-transform group-hover:scale-95" />
+                          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 backdrop-blur-[2px] rounded-3xl">
+                             <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg">REFRESHING...</div>
+                          </div>
+                        </div>
+                        <h4 className="font-black text-slate-900 mb-1">Scan & Pay</h4>
+                        <p className="text-xs font-bold text-slate-400 leading-relaxed">Open any UPI app like GPay, PhonePe, or Paytm <br/> to scan this QR code and pay ₹{grand}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 mb-8 text-white">
@@ -497,8 +875,14 @@ export default function Booking() {
                     <div className="flex justify-between"><span>Name</span><span className="text-white">{confirmedTicket.visitor_name}</span></div>
                     <div className="flex justify-between"><span>Date</span><span className="text-white">{confirmedTicket.date}</span></div>
                     <div className="flex justify-between"><span>Time Slot</span><span className="text-white">{confirmedTicket.time_slot}</span></div>
-                    <div className="flex justify-between"><span>Adults</span><span className="text-white">{confirmedTicket.adults}</span></div>
-                    <div className="flex justify-between"><span>Children</span><span className="text-white">{confirmedTicket.children}</span></div>
+                    <div className="flex flex-wrap gap-2 py-2">
+                       {confirmedTicket.adults > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.adults} Adult</span>}
+                       {confirmedTicket.children > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.children} Child</span>}
+                       {confirmedTicket.students > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.students} Student</span>}
+                       {confirmedTicket.females > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.females} Female</span>}
+                       {confirmedTicket.seniors > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.seniors} Senior</span>}
+                       {confirmedTicket.foreigners > 0 && <span className="bg-white/10 px-2 py-1 rounded text-[10px]">{confirmedTicket.foreigners} Foreigner</span>}
+                    </div>
                     <div className="flex justify-between pt-3 border-t border-blue-500"><span>Total Paid</span><span className="text-white text-lg font-black">₹{grand}</span></div>
                   </div>
                 </div>
@@ -532,6 +916,12 @@ export default function Booking() {
         ticket={confirmedTicket}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <MuseumSelector 
+        isOpen={isMuseumModalOpen}
+        onClose={() => setIsMuseumModalOpen(false)}
+        onSelect={(museum) => setSelectedMuseum(museum)}
       />
 
       {/* Benefits Bar */}

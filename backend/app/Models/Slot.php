@@ -14,5 +14,6 @@ class Slot extends Model
         'time_slot',
         'capacity',
         'booked',
+        'price',
     ];
 }

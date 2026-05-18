@@ -20,22 +20,21 @@ class ChatbotController extends Controller
 
         // 2. Fallback to AI (OpenAI) if no local match
         if (!$reply) {
-            $reply = $this->getAIResponse($request->message);
+            $language = $request->input('language', 'English');
+            $reply = $this->getAIResponse($request->message, $language);
         }
 
-        /* 
         ChatLog::create([
-            'user_id' => auth()->check() ? auth()->id() : null,
+            'user_id' => auth('api')->id() ?? null,
             'message' => $request->message,
             'sender' => 'user'
         ]);
 
         ChatLog::create([
-            'user_id' => auth()->check() ? auth()->id() : null,
+            'user_id' => auth('api')->id() ?? null,
             'message' => $reply,
             'sender' => 'bot'
         ]);
-        */
 
         return response()->json([
             'reply' => $reply
@@ -49,8 +48,8 @@ class ChatbotController extends Controller
     {
         $faqs = [
             'price' => [
-                'keywords' => ['price', 'ticket', 'cost', 'fee', 'charge', 'amount', 'paise', 'rupees', 'टिकट'],
-                'reply' => "🎟️ Ticket Prices:\n• Adult: ₹500\n• Child (5-12): ₹250\n• Student: ₹200 (with ID)\n• Below 5: FREE"
+                'keywords' => ['price', 'ticket', 'cost', 'fee', 'charge', 'amount', 'paise', 'rupees', 'टिकट', 'discount', 'student', 'concession', 'offer'],
+                'reply' => "🎟️ Ticket Prices & Discounts:\n• Adult: ₹500\n• Child (5-12): ₹250\n• Student: ₹200 (Requires valid ID) 🎉\n• Senior Citizen: ₹350\n• Below 5: FREE"
             ],
             'timing' => [
                 'keywords' => ['timing', 'time', 'open', 'close', 'hour', 'when', 'schedule', 'monday', 'समय'],
@@ -63,6 +62,14 @@ class ChatbotController extends Controller
             'location' => [
                 'keywords' => ['location', 'where', 'place', 'address', 'reach', 'map', 'direction', 'pata', 'पता'],
                 'reply' => "📍 Location: Central Heritage Park, Gate 2, New Delhi.\n🚇 Metro: Heritage Park Station (Yellow Line)."
+            ],
+            'guide' => [
+                'keywords' => ['guide', 'visitor guide', 'map', 'tour', 'explore', 'what to see', 'attractions'],
+                'reply' => "🗺️ **Visitor Guide Highlights:**\n• Level 1: Ancient Artifacts & Sculptures\n• Level 2: Medieval History & Armory\n• Level 3: Modern Art & Exhibitions\n• Cafeteria: Ground floor near Exit.\n\nAudio guides are available at the reception for ₹150!"
+            ],
+            'history' => [
+                'keywords' => ['history', 'conversations', 'recent conversations', 'past'],
+                'reply' => "You can view all your recent conversations with me in the 'Recent History' section on the left sidebar! Let me know if you need help with anything else."
             ],
         ];
 
@@ -88,7 +95,7 @@ class ChatbotController extends Controller
     /**
      * Step 2: OpenAI Fallback for Intelligent Conversations
      */
-    private function getAIResponse($userMessage)
+    private function getAIResponse($userMessage, $language = 'English')
     {
         $apiKey = env('OPENAI_API_KEY');
         
@@ -96,27 +103,8 @@ class ChatbotController extends Controller
             return "I apologize, but I'm currently in basic mode. You can ask me about prices, timings, or location. For more complex help, please check our help section.";
         }
 
-        /*
-        // Fetch last 5 messages for context
-        $history = ChatLog::where('user_id', auth()->id())
-            ->latest()
-            ->take(5)
-            ->get()
-            ->reverse();
-
         $messages = [
-            ['role' => 'system', 'content' => 'You are a helpful and professional AI Assistant for the National Heritage Museum. Keep answers polite and museum-focused. Support both English and Hindi. Use previous context if available.']
-        ];
-
-        foreach ($history as $log) {
-            $messages[] = ['role' => $log->sender === 'bot' ? 'assistant' : 'user', 'content' => $log->message];
-        }
-
-        $messages[] = ['role' => 'user', 'content' => $userMessage];
-        */
-
-        $messages = [
-            ['role' => 'system', 'content' => 'You are a helpful and professional AI Assistant for the National Heritage Museum. Keep answers polite and museum-focused. Support both English and Hindi.'],
+            ['role' => 'system', 'content' => "You are a helpful and professional AI Assistant for the National Heritage Museum. Keep answers polite and museum-focused. Always reply in {$language}."],
             ['role' => 'user', 'content' => $userMessage]
         ];
 
@@ -138,6 +126,17 @@ class ChatbotController extends Controller
         } catch (\Exception $e) {
             return "I understand your query but I'm unable to reach my advanced logic right now. Try asking about 'ticket prices' or 'timings'!";
         }
+    }
+
+    public function getHistory()
+    {
+        $logs = ChatLog::where('user_id', auth('api')->id())
+            ->latest()
+            ->take(50)
+            ->get()
+            ->reverse();
+
+        return response()->json($logs);
     }
 
     private function containsAny($text, $array)

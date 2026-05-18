@@ -53,11 +53,11 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-4">
                 <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0"><Phone className="h-4 w-4 text-museum-gold" /></div>
-                <span>+91 11 2345 6789</span>
+                <span>+91 8084111304</span>
               </li>
               <li className="flex items-center gap-4">
                 <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0"><Mail className="h-4 w-4 text-museum-gold" /></div>
-                <span>contact@museumticket.com</span>
+                <span>subhamkumar260506@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -80,7 +80,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-white/5 pt-10 flex flex-col md:flex-row justify-between items-center gap-6 text-gray-500 text-sm font-bold">
-          <p>© 2024 Museum Ticketing System. Crafted with passion.</p>
+          <p>© 2026 Museum Ticketing System. Crafted with passion.</p>
           <div className="flex gap-8 uppercase tracking-widest text-[10px]">
             <Link to="/privacy" className="hover:text-museum-gold transition-colors text-gray-500">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-museum-gold transition-colors text-gray-500">Terms of Service</Link>

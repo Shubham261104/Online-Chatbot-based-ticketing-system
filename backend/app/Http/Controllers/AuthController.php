@@ -82,7 +82,17 @@ class AuthController extends Controller
             }
         }
 
+        if ($user->status === 'blocked') {
+            return response()->json([
+                'error' => 'Your account has been blocked.',
+                'reason' => $user->block_reason
+            ], 403);
+        }
+
         $token = JWTAuth::fromUser($user);
+
+        // Update last login
+        $user->update(['last_login_at' => now()]);
 
         return response()->json([
             'user' => $user,
@@ -99,8 +109,20 @@ class AuthController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        $user = auth()->user();
+
+        if ($user->status === 'blocked') {
+            auth()->logout();
+            return response()->json([
+                'error' => 'Your account has been blocked.',
+                'reason' => $user->block_reason
+            ], 403);
+        }
+
+        $user->update(['last_login_at' => now()]);
+
         return response()->json([
-            'user' => auth()->user(),
+            'user' => $user,
             'token' => $token
         ]);
     }
@@ -113,6 +135,41 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json(auth()->user());
+        $user = auth()->user();
+        
+        $totalVisits = \App\Models\Ticket::where('user_id', $user->id)
+                                         ->where('status', 'paid')
+                                         ->count();
+                                         
+        $rewardPoints = $totalVisits * 50; // 50 points per visit
+        
+        $user->total_visits = $totalVisits;
+        $user->reward_points = $rewardPoints;
+        
+        return response()->json($user);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'location' => 'nullable|string|max:255',
+            'profile_picture' => 'nullable|string'
+        ]);
+
+        if ($request->has('name')) $user->name = $request->name;
+        if ($request->has('phone')) $user->phone = $request->phone;
+        if ($request->has('location')) $user->location = $request->location;
+        if ($request->has('profile_picture')) $user->profile_picture = $request->profile_picture;
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
     }
 }

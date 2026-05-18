@@ -73,10 +73,16 @@ const About = () => {
                 MTicket is more than just a booking portal. It's an intelligent ecosystem designed to bridge the gap between ancient history and modern convenience.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-6">
-                 <button className="px-10 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-white/10 hover:bg-slate-50 transition-all flex items-center gap-3">
+                 <button 
+                   onClick={() => document.getElementById('mission').scrollIntoView({ behavior: 'smooth' })}
+                   className="px-10 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-white/10 hover:bg-slate-50 transition-all flex items-center gap-3"
+                 >
                     Our Mission <ArrowRight className="w-4 h-4" />
                  </button>
-                 <button className="px-10 py-5 bg-slate-900 text-white border border-slate-800 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 transition-all">
+                 <button 
+                   onClick={() => document.getElementById('tech').scrollIntoView({ behavior: 'smooth' })}
+                   className="px-10 py-5 bg-slate-900 text-white border border-slate-800 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 transition-all"
+                 >
                     Explore Tech
                  </button>
               </div>
@@ -89,7 +95,7 @@ const About = () => {
       </section>
 
       {/* Detail Section: The Problem & Solution */}
-      <section className="py-24 lg:py-32 relative overflow-hidden">
+      <section id="mission" className="py-24 lg:py-32 relative overflow-hidden">
          <div className="max-w-7xl mx-auto px-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
                <motion.div
@@ -157,7 +163,7 @@ const About = () => {
       </section>
 
       {/* Detailed Features Grid */}
-      <section className="py-24 lg:py-32 bg-slate-50">
+      <section id="tech" className="py-24 lg:py-32 bg-slate-50">
          <div className="max-w-7xl mx-auto px-6">
             <div className="text-center max-w-3xl mx-auto mb-20">
                <h2 className="text-4xl font-black text-slate-900 mb-6 tracking-tighter">Powered by Modern Technology</h2>

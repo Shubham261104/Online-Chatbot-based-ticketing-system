@@ -64,25 +64,68 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
 
                   {/* Details Grid */}
                   <div className="grid grid-cols-2 gap-y-5 gap-x-6 mb-8">
-                    {[
-                      { label: 'Visit Date', value: ticket.date, icon: Calendar, sub: 'Confirmed' },
-                      { label: 'Time Slot', value: ticket.time_slot, icon: Clock },
-                      { label: 'Visitor Name', value: ticket.visitor_name, icon: User },
-                      { label: 'No. of Tickets', value: `${ticket.adults + ticket.children} Total`, icon: TicketIcon },
-                      { label: 'Ticket Type', value: ticket.event_name ? ticket.event_name : 'General Entry', icon: Zap },
-                      { label: 'Total Paid', value: `₹${ticket.total_price}.00`, icon: IndianRupee },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0 shadow-sm">
-                          <item.icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{item.label}</p>
-                          <p className="text-sm font-black text-slate-900 leading-tight">{item.value}</p>
-                          {item.sub && <p className="text-[9px] font-bold text-green-500 mt-0.5">{item.sub}</p>}
-                        </div>
-                      </div>
-                    ))}
+                    {/* Basic Info Row */}
+                    <div className="col-span-2 grid grid-cols-2 gap-5 mb-2">
+                       {[
+                         { label: 'Visit Date', value: ticket.date, icon: Calendar, sub: 'Confirmed' },
+                         { label: 'Time Slot', value: ticket.time_slot, icon: Clock },
+                         { label: 'Visitor Name', value: ticket.visitor_name, icon: User },
+                         { label: 'Visitor Email', value: ticket.visitor_email, icon: Info },
+                       ].map((item, i) => (
+                         <div key={i} className="flex items-start gap-3">
+                           <div className="w-9 h-9 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center text-slate-400 shrink-0 shadow-sm">
+                             <item.icon className="w-4 h-4" />
+                           </div>
+                           <div>
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">{item.label}</p>
+                             <p className="text-[13px] font-black text-slate-900 leading-tight">{item.value}</p>
+                             {item.sub && <p className="text-[9px] font-bold text-green-500 mt-0.5">{item.sub}</p>}
+                           </div>
+                         </div>
+                       ))}
+                    </div>
+
+                    {/* Detailed Visitor Breakdown Section */}
+                    <div className="col-span-2 bg-slate-50/50 border border-slate-100 rounded-[1.5rem] p-5">
+                       <div className="flex items-center gap-2 mb-4">
+                          <TicketIcon className="w-4 h-4 text-blue-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Detailed Visitor Breakdown</span>
+                       </div>
+                       <div className="flex flex-col gap-2">
+                          {[
+                            { label: 'Adult', count: ticket.adults },
+                            { label: 'Child', count: ticket.children },
+                            { label: 'Student', count: ticket.students },
+                            { label: 'Female', count: ticket.females },
+                            { label: 'Senior', count: ticket.seniors },
+                            { label: 'Foreigner', count: ticket.foreigners },
+                          ].filter(item => item.count > 0).map((item, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                               <span className="text-sm font-black text-slate-900">{item.count}</span>
+                               <span className="text-sm font-bold text-gray-500">{item.label}</span>
+                            </div>
+                          ))}
+                          {![ticket.adults, ticket.children, ticket.students, ticket.females, ticket.seniors, ticket.foreigners].some(c => c > 0) && (
+                            <p className="text-[10px] font-bold text-gray-400 italic py-2">No visitor details available</p>
+                          )}
+                       </div>
+                    </div>
+
+                    {/* Total Price Row */}
+                    <div className="col-span-2 flex items-center justify-between bg-slate-900 text-white p-5 rounded-[1.5rem] mt-2 shadow-xl shadow-slate-100">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-blue-400">
+                             <IndianRupee className="w-6 h-6" />
+                          </div>
+                          <div>
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Final Amount Paid</p>
+                             <p className="text-xs font-bold text-blue-200">Includes all taxes & fees</p>
+                          </div>
+                       </div>
+                       <div className="text-right">
+                          <h4 className="text-2xl font-black tracking-tighter">₹{ticket.total_price}.00</h4>
+                       </div>
+                    </div>
                   </div>
 
                   {/* Important Instructions */}
@@ -134,8 +177,9 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                    
                    <div className="space-y-4 mb-6">
                       <div>
-                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Visitor Name</p>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Visitor Details</p>
                         <p className="text-[11px] font-black text-slate-900 truncate max-w-[120px]">{ticket.visitor_name}</p>
+                        <p className="text-[9px] font-bold text-gray-500 truncate max-w-[120px]">{ticket.visitor_email}</p>
                       </div>
                       <div>
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Visit Date & Slot</p>

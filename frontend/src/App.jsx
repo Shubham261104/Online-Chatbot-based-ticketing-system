@@ -1,8 +1,8 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import { useEffect } from 'react';
 
 import Home from './pages/Home';
 import Booking from './pages/Booking';
@@ -25,7 +25,28 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const AppContent = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const hideFooter = location.pathname === '/chat';
+
+  // Force logout when the website is first started (per session)
+  useEffect(() => {
+    const appStarted = sessionStorage.getItem('appStarted');
+    if (!appStarted) {
+      localStorage.clear();
+      sessionStorage.setItem('appStarted', 'true');
+    }
+  }, []);
+
+  // Guard: If not logged in, redirect to login page (except for login/register)
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const isAuthPage = ['/login', '/register'].includes(location.pathname);
+    const isPublicPage = ['/about', '/contact', '/privacy', '/terms', '/cookies'].includes(location.pathname);
+
+    if (!token && !isAuthPage && !isPublicPage) {
+      navigate('/login');
+    }
+  }, [location.pathname, navigate]);
 
   return (
     <div className="flex flex-col min-h-screen">

@@ -1,14 +1,78 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Phone, MapPin, Calendar, ShieldCheck, Edit3, Camera, LogOut, Ticket, Star, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import api from '../api/api';
 
 const Profile = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{"name":"Explorer","email":"visitor@museum.com"}'));
+  const [stats, setStats] = useState({ totalVisits: 0, rewardPoints: 0, memberSince: new Date().getFullYear() });
+  const [activities, setActivities] = useState([
+    { id: 'default-1', action: 'Account Created', time: 'Recently' }
+  ]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ name: user.name, email: user.email });
+  const [editForm, setEditForm] = useState({ name: user.name || '', email: user.email || '', phone: user.phone || '', location: user.location || '' });
   const navigate = useNavigate();
+  const fileInputRef = React.useRef(null);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/me');
+        const userData = res.data;
+        setUser(userData);
+        setEditForm({ name: userData.name || '', email: userData.email || '', phone: userData.phone || '', location: userData.location || '' });
+        
+        // Update local storage so other parts of the app have the latest name
+        localStorage.setItem('user', JSON.stringify(userData));
+
+        setStats({
+          totalVisits: userData.total_visits || 0,
+          rewardPoints: userData.reward_points || 0,
+          memberSince: userData.created_at ? new Date(userData.created_at).getFullYear() : new Date().getFullYear()
+        });
+      } catch (err) {
+        console.error('Failed to fetch profile data');
+      }
+    };
+    
+    const fetchActivities = async () => {
+      try {
+        const res = await api.get('/tickets');
+        if (res.data && res.data.length > 0) {
+           const formattedActivities = res.data.slice(0, 5).map(ticket => {
+              const date = new Date(ticket.created_at);
+              const now = new Date();
+              const diffMs = now - date;
+              const diffMins = Math.floor(diffMs / 60000);
+              const diffHrs = Math.floor(diffMins / 60);
+              const diffDays = Math.floor(diffHrs / 24);
+              
+              let timeStr = 'Just now';
+              if (diffDays > 0) timeStr = diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+              else if (diffHrs > 0) timeStr = `${diffHrs} hours ago`;
+              else if (diffMins > 0) timeStr = `${diffMins} minutes ago`;
+
+              return {
+                 id: ticket.id,
+                 action: ticket.status === 'cancelled' ? `Cancelled Ticket #${ticket.id}` : `Booked Ticket #${ticket.id} (${ticket.event_name || 'Museum Entry'})`,
+                 time: timeStr
+              };
+           });
+           setActivities(formattedActivities);
+        }
+      } catch (err) {
+        console.error('Failed to fetch activities');
+      }
+    };
+    
+    fetchProfile();
+    fetchActivities();
+    
+    const intervalId = setInterval(fetchActivities, 10000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -16,19 +80,46 @@ const Profile = () => {
     toast.success('Logged out successfully');
   };
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    const updatedUser = { ...user, name: editForm.name, email: editForm.email };
-    setUser(updatedUser);
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    setIsEditing(false);
-    toast.success('Profile updated successfully!');
+    try {
+      const res = await api.post('/update-profile', editForm);
+      setUser(res.data.user);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      setIsEditing(false);
+      toast.success('Profile updated successfully!');
+    } catch (err) {
+      toast.error('Failed to update profile');
+    }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size must be less than 2MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result;
+        try {
+          const res = await api.post('/update-profile', { profile_picture: base64String });
+          setUser(res.data.user);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          toast.success('Profile picture updated!');
+        } catch (err) {
+          toast.error('Failed to upload picture');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const profileStats = [
-    { label: 'Total Visits', value: '12', icon: <Ticket className="w-5 h-5" />, color: 'bg-blue-50 text-blue-600' },
-    { label: 'Member Since', value: '2024', icon: <Calendar className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600' },
-    { label: 'Reward Points', value: '850', icon: <Star className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600' },
+    { label: 'Total Visits', value: stats.totalVisits, icon: <Ticket className="w-5 h-5" />, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Member Since', value: stats.memberSince, icon: <Calendar className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600' },
+    { label: 'Reward Points', value: stats.rewardPoints, icon: <Star className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600' },
   ];
 
   return (
@@ -128,6 +219,26 @@ const Profile = () => {
                           className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
                         />
                      </div>
+                     <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-2">Phone Number</label>
+                        <input 
+                          type="text" 
+                          value={editForm.phone} 
+                          onChange={e => setEditForm({...editForm, phone: e.target.value})}
+                          placeholder="+91 98765 43210"
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                        />
+                     </div>
+                     <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block px-2">Location</label>
+                        <input 
+                          type="text" 
+                          value={editForm.location} 
+                          onChange={e => setEditForm({...editForm, location: e.target.value})}
+                          placeholder="New Delhi, India"
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:border-blue-500 transition-all font-bold"
+                        />
+                     </div>
                      <div className="flex gap-4 pt-4">
                         <button 
                           type="button" onClick={() => setIsEditing(false)}
@@ -177,7 +288,7 @@ const Profile = () => {
                     </div>
                     <div>
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
-                       <p className="font-bold text-slate-900">+91 98765 43210</p>
+                       <p className="font-bold text-slate-900">{user.phone || 'Not provided'}</p>
                     </div>
                  </div>
 
@@ -187,7 +298,7 @@ const Profile = () => {
                     </div>
                     <div>
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Location</p>
-                       <p className="font-bold text-slate-900">New Delhi, India</p>
+                       <p className="font-bold text-slate-900">{user.location || 'Not provided'}</p>
                     </div>
                  </div>
               </div>
@@ -205,12 +316,8 @@ const Profile = () => {
                     <Clock className="w-6 h-6 text-amber-500" /> Recent Activity
                  </h3>
                  <div className="space-y-6">
-                    {[
-                      { action: 'Booked Ticket #554', time: '2 hours ago' },
-                      { action: 'Shared E-Ticket to Email', time: 'Yesterday' },
-                      { action: 'Updated Profile Picture', time: '3 days ago' },
-                    ].map((act, i) => (
-                      <div key={i} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0">
+                    {activities.map((act) => (
+                      <div key={act.id} className="flex items-center justify-between py-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors rounded-lg px-2 -mx-2">
                          <span className="font-bold text-slate-700 text-sm">{act.action}</span>
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{act.time}</span>
                       </div>

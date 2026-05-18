@@ -1,9 +1,70 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Clock, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, Facebook, Instagram, Twitter, Youtube, MessageCircle, Loader2 } from 'lucide-react';
 import signupBg from '../assets/signup-bg.png';
+import api from '../api/api';
+import { toast } from 'react-toastify';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    user_name: '',
+    user_email: '',
+    subject: '',
+    message: ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.post('/support', formData);
+      toast.success('Message sent successfully! We will get back to you soon.');
+      setFormData({
+        user_name: '',
+        user_email: '',
+        subject: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error(error.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const contactInfo = [
+    { 
+      icon: <MapPin className="w-5 h-5" />, 
+      title: 'Our Address', 
+      value: '123 Museum Road, Culture City,\nNew Delhi - 110001, India', 
+      color: 'bg-blue-50 text-blue-600' 
+    },
+    { 
+      icon: <Phone className="w-5 h-5" />, 
+      title: 'Phone Number', 
+      value: '+91 8084111304', 
+      color: 'bg-green-50 text-green-600' 
+    },
+    { 
+      icon: <Mail className="w-5 h-5" />, 
+      title: 'Email Address', 
+      value: 'subhamkumar260506@gmail.com', 
+      color: 'bg-purple-50 text-purple-600' 
+    },
+    { 
+      icon: <Clock className="w-5 h-5" />, 
+      title: 'Working Hours', 
+      value: 'Monday - Sunday\n9:00 AM - 9:00 PM', 
+      color: 'bg-orange-50 text-orange-600' 
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-white pt-24">
       <div className="max-w-7xl mx-auto px-6 py-16 lg:py-24">
@@ -23,12 +84,7 @@ const Contact = () => {
                </div>
 
                <div className="space-y-8">
-                  {[
-                    { icon: <MapPin className="w-5 h-5" />, title: 'Our Address', value: '123 Museum Road, Culture City,\nNew Delhi - 110001, India', color: 'bg-blue-50 text-blue-600' },
-                    { icon: <Phone className="w-5 h-5" />, title: 'Phone Number', value: '+91 98765 43210', color: 'bg-green-50 text-green-600' },
-                    { icon: <Mail className="w-5 h-5" />, title: 'Email Address', value: 'support@museumticketing.com', color: 'bg-purple-50 text-purple-600' },
-                    { icon: <Clock className="w-5 h-5" />, title: 'Working Hours', value: 'Monday - Sunday\n9:00 AM - 7:00 PM', color: 'bg-orange-50 text-orange-600' },
-                  ].map((item, i) => (
+                  {contactInfo.map((item, i) => (
                     <div key={i} className="flex gap-6 group">
                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform shadow-md ${item.color}`}>
                           {item.icon}
@@ -70,7 +126,7 @@ const Contact = () => {
                      <p className="text-gray-400 font-medium">We usually respond within 24 hours.</p>
                   </div>
 
-                  <form className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Your Name</label>
@@ -78,7 +134,11 @@ const Contact = () => {
                               <MessageCircle className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                               <input 
                                 type="text" 
+                                name="user_name"
+                                value={formData.user_name}
+                                onChange={handleChange}
                                 placeholder="John Doe"
+                                required
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all text-gray-900 font-medium"
                               />
                            </div>
@@ -89,7 +149,11 @@ const Contact = () => {
                               <Mail className="absolute left-4 top-4 h-5 w-5 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                               <input 
                                 type="email" 
+                                name="user_email"
+                                value={formData.user_email}
+                                onChange={handleChange}
                                 placeholder="name@example.com"
+                                required
                                 className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all text-gray-900 font-medium"
                               />
                            </div>
@@ -100,7 +164,11 @@ const Contact = () => {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Subject</label>
                         <input 
                           type="text" 
+                          name="subject"
+                          value={formData.subject}
+                          onChange={handleChange}
                           placeholder="How can we help you?"
+                          required
                           className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all text-gray-900 font-medium"
                         />
                      </div>
@@ -109,17 +177,26 @@ const Contact = () => {
                         <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Message</label>
                         <textarea 
                           rows="6"
+                          name="message"
+                          value={formData.message}
+                          onChange={handleChange}
                           placeholder="Type your message here..."
+                          required
                           className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-600 transition-all text-gray-900 font-medium resize-none"
                         />
                      </div>
 
                      <button 
                        type="submit"
-                       className="w-full py-5 bg-museum-dark hover:bg-black text-white font-black text-lg rounded-2xl transition-all shadow-2xl flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0"
+                       disabled={loading}
+                       className="w-full py-5 bg-slate-950 hover:bg-black text-white font-black text-lg rounded-2xl transition-all shadow-2xl flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 disabled:opacity-70 disabled:cursor-not-allowed"
                      >
-                        <Send className="w-6 h-6" />
-                        Send Message
+                        {loading ? (
+                          <Loader2 className="w-6 h-6 animate-spin" />
+                        ) : (
+                          <Send className="w-6 h-6" />
+                        )}
+                        {loading ? 'Sending...' : 'Send Message'}
                      </button>
                   </form>
                </motion.div>
