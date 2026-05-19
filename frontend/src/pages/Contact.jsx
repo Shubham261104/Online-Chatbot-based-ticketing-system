@@ -30,6 +30,7 @@ const Contact = () => {
         subject: '',
         message: ''
       });
+      window.dispatchEvent(new Event('activity-completed'));
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error(error.response?.data?.message || 'Failed to send message. Please try again.');

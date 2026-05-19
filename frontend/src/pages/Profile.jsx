@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Phone, MapPin, Calendar, ShieldCheck, Edit3, Camera, LogOut, Ticket, Star, Clock } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, ShieldCheck, Edit3, Camera, LogOut, Ticket, Star, Clock, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../api/api';
@@ -15,6 +15,7 @@ const Profile = () => {
   const [editForm, setEditForm] = useState({ name: user.name || '', email: user.email || '', phone: user.phone || '', location: user.location || '' });
   const navigate = useNavigate();
   const fileInputRef = React.useRef(null);
+  const coverInputRef = React.useRef(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -70,8 +71,18 @@ const Profile = () => {
     fetchProfile();
     fetchActivities();
     
+    const handleActivityCompleted = () => {
+      fetchProfile();
+      fetchActivities();
+    };
+
+    window.addEventListener('activity-completed', handleActivityCompleted);
+    
     const intervalId = setInterval(fetchActivities, 10000);
-    return () => clearInterval(intervalId);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('activity-completed', handleActivityCompleted);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -88,28 +99,92 @@ const Profile = () => {
       localStorage.setItem('user', JSON.stringify(res.data.user));
       setIsEditing(false);
       toast.success('Profile updated successfully!');
+      window.dispatchEvent(new Event('activity-completed'));
     } catch (err) {
       toast.error('Failed to update profile');
     }
   };
 
+  const compressImage = (base64Str, maxWidth, maxHeight, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    });
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast.error('Image size must be less than 2MB');
-        return;
-      }
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64String = reader.result;
         try {
-          const res = await api.post('/update-profile', { profile_picture: base64String });
+          const compressed = await compressImage(base64String, 300, 300, 0.85);
+          const res = await api.post('/update-profile', { profile_picture: compressed });
           setUser(res.data.user);
           localStorage.setItem('user', JSON.stringify(res.data.user));
           toast.success('Profile picture updated!');
+          window.dispatchEvent(new Event('activity-completed'));
         } catch (err) {
           toast.error('Failed to upload picture');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveProfilePicture = async (e) => {
+    e.stopPropagation();
+    try {
+      const res = await api.post('/update-profile', { profile_picture: null });
+      setUser(res.data.user);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      toast.success('Profile picture removed!');
+      window.dispatchEvent(new Event('activity-completed'));
+    } catch (err) {
+      toast.error('Failed to remove profile picture');
+    }
+  };
+
+  const handleCoverUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64String = reader.result;
+        try {
+          const compressed = await compressImage(base64String, 1200, 400, 0.75);
+          const res = await api.post('/update-profile', { cover_photo: compressed });
+          setUser(res.data.user);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          toast.success('Cover photo updated!');
+          window.dispatchEvent(new Event('activity-completed'));
+        } catch (err) {
+          toast.error('Failed to upload cover photo');
         }
       };
       reader.readAsDataURL(file);
@@ -131,11 +206,15 @@ const Profile = () => {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden mb-8"
         >
-          <div className="h-48 bg-gradient-to-r from-museum-dark to-slate-800 relative">
-             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+          <div className="h-48 bg-gradient-to-r from-museum-dark to-slate-800 relative overflow-hidden">
+             {user.cover_photo ? (
+                <img src={user.cover_photo} alt="Cover" className="w-full h-full object-cover absolute inset-0" />
+             ) : (
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+             )}
              <button 
-               onClick={() => toast.info('Cover photo update coming soon!')}
-               className="absolute top-6 right-6 p-3 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-white/20 transition-all border border-white/10"
+               onClick={() => coverInputRef.current.click()}
+               className="absolute top-6 right-6 p-3 bg-white/10 backdrop-blur-md rounded-xl text-white hover:bg-white/20 transition-all border border-white/10 z-10"
              >
                 <Camera className="w-5 h-5" />
              </button>
@@ -143,14 +222,33 @@ const Profile = () => {
           
           <div className="px-10 pb-10 relative">
              <div className="flex flex-col md:flex-row md:items-end gap-8 -mt-16 mb-8">
-                <div className="relative group cursor-pointer" onClick={() => toast.info('Profile picture update coming soon!')}>
-                   <div className="w-32 h-32 bg-museum-gold rounded-[2.5rem] border-[6px] border-white flex items-center justify-center text-museum-dark text-4xl font-black shadow-2xl relative z-10">
-                      {user.name.charAt(0)}
+                <div className="relative group cursor-pointer">
+                   <div 
+                     onClick={() => fileInputRef.current.click()}
+                     className="w-32 h-32 bg-museum-gold rounded-[2.5rem] border-[6px] border-white flex items-center justify-center text-museum-dark text-4xl font-black shadow-2xl relative z-10 overflow-hidden"
+                   >
+                      {user.profile_picture ? (
+                         <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                         user.name.charAt(0)
+                      )}
                    </div>
                    <div className="absolute inset-0 bg-blue-600 rounded-[2.5rem] blur-2xl opacity-20 group-hover:opacity-40 transition-opacity" />
-                   <div className="absolute bottom-2 right-2 z-20 w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center border-2 border-white shadow-lg">
+                   <div 
+                     onClick={() => fileInputRef.current.click()}
+                     className="absolute bottom-2 right-2 z-20 w-8 h-8 bg-slate-900 text-white rounded-lg flex items-center justify-center border-2 border-white shadow-lg hover:scale-110 transition-transform"
+                   >
                       <Camera className="w-4 h-4" />
                    </div>
+                   {user.profile_picture && (
+                      <button 
+                        onClick={handleRemoveProfilePicture}
+                        className="absolute top-2 -right-2 z-20 w-8 h-8 bg-rose-600 text-white rounded-lg flex items-center justify-center border-2 border-white shadow-lg hover:scale-110 hover:bg-rose-700 transition-all"
+                        title="Remove Profile Picture"
+                      >
+                         <Trash2 className="w-4 h-4" />
+                      </button>
+                   )}
                 </div>
                 
                 <div className="flex-grow">
@@ -334,6 +432,20 @@ const Profile = () => {
            </motion.div>
         </div>
       </div>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleImageUpload} 
+        accept="image/*" 
+        className="hidden" 
+      />
+      <input 
+        type="file" 
+        ref={coverInputRef} 
+        onChange={handleCoverUpload} 
+        accept="image/*" 
+        className="hidden" 
+      />
     </div>
   );
 };

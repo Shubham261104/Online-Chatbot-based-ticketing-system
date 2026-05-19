@@ -30,6 +30,16 @@ class SupportController extends Controller
             'status'     => 'open',
         ]);
 
+        if ($ticket->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $ticket->user_id,
+                'type' => 'info',
+                'title' => 'Support Ticket Received',
+                'message' => "We have received your support request: '{$ticket->subject}'. Our admin team will reply shortly. Ticket ID: #{$ticket->id}.",
+                'is_read' => false
+            ]);
+        }
+
         return response()->json([
             'message' => 'Support ticket submitted successfully',
             'ticket'  => $ticket
@@ -60,6 +70,16 @@ class SupportController extends Controller
             'status'      => $request->status,
             'admin_reply' => $request->admin_reply,
         ]);
+
+        if ($ticket->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $ticket->user_id,
+                'type' => 'success',
+                'title' => 'Support Ticket Updated',
+                'message' => "Your support ticket #{$ticket->id} ('{$ticket->subject}') has been updated to " . strtoupper($ticket->status) . "." . ($ticket->admin_reply ? " Admin reply: '{$ticket->admin_reply}'" : ""),
+                'is_read' => false
+            ]);
+        }
 
         return response()->json([
             'message' => 'Support ticket updated successfully',

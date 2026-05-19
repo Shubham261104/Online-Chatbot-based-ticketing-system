@@ -1,222 +1,376 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
   Target, Eye, Heart, Users, Ticket, Landmark, Trophy, Globe, 
   MessageSquare, Zap, ShieldCheck, Smartphone, Sparkles, ArrowRight,
-  Monitor, Cpu, BarChart3, Clock
+  Monitor, Cpu, BarChart3, Clock, ChevronDown, Award, MapPin
 } from 'lucide-react';
-import heroBg from '../assets/hero-bg.png';
+import { MUSEUM_DETAILS } from '../data/museumData';
 
 const About = () => {
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [activeMuseumTab, setActiveMuseumTab] = useState('india');
+
   const stats = [
-    { icon: <Ticket className="w-6 h-6 text-blue-600" />, value: '50K+', label: 'Tickets Booked', color: 'bg-blue-50' },
-    { icon: <Heart className="w-6 h-6 text-rose-600" />, value: '20K+', label: 'Happy Visitors', color: 'bg-rose-50' },
-    { icon: <Landmark className="w-6 h-6 text-indigo-600" />, value: '15+', label: 'Museums Partnered', color: 'bg-indigo-50' },
-    { icon: <Trophy className="w-6 h-6 text-amber-600" />, value: '100+', label: 'Events Organized', color: 'bg-amber-50' },
+    { icon: <Ticket className="w-6 h-6 text-blue-600" />, value: '12,500+', label: 'Tickets Booked', color: 'bg-blue-50' },
+    { icon: <Heart className="w-6 h-6 text-rose-600" />, value: '9,800+', label: 'Happy Visitors', color: 'bg-rose-50' },
+    { icon: <Landmark className="w-6 h-6 text-indigo-600" />, value: '15+', label: 'Active Museums', color: 'bg-indigo-50' },
+    { icon: <Award className="w-6 h-6 text-amber-600" />, value: '4.9/5', label: 'Average Rating', color: 'bg-amber-50' },
   ];
 
   const techFeatures = [
     { 
       title: 'AI Smart Assistant', 
-      desc: 'Our intelligent chatbot uses natural language processing to guide visitors through exhibits and handle complex booking queries instantly.',
+      desc: 'Our intelligent chatbot uses natural language processing to guide visitors through exhibits, suggest time slots, and pre-fill booking details instantly.',
       icon: <MessageSquare className="w-6 h-6" />,
       color: 'from-blue-600 to-indigo-600'
     },
     { 
       title: 'Dynamic QR Tickets', 
-      desc: 'Say goodbye to paper. Our system generates secure, real-time QR codes that allow for contactless entry and instant verification.',
+      desc: 'Say goodbye to paper. Our system generates secure, real-time QR codes that allow for contactless entry and instant scanner verification.',
       icon: <Smartphone className="w-6 h-6" />,
       color: 'from-emerald-600 to-teal-600'
     },
     { 
-      title: 'Real-time Analytics', 
-      desc: 'Museum administrators get live heatmaps and visitor data to manage crowds effectively and optimize exhibit schedules.',
+      title: 'Real-time Capacity Tracking', 
+      desc: 'Museum administrators get live dashboard insights to manage crowds effectively, prevent congestion, and optimize slots.',
       icon: <BarChart3 className="w-6 h-6" />,
       color: 'from-purple-600 to-pink-600'
     },
     { 
-      title: 'Museum-as-a-Service', 
-      desc: 'A robust cloud infrastructure ensuring 99.9% uptime, even during peak festive seasons and major international exhibitions.',
-      icon: <Cpu className="w-6 h-6" />,
+      title: 'Secure Razorpay Payments', 
+      desc: 'A robust cloud payments integration ensuring 100% secure payments, instant receipt generation, and smooth cancellations.',
+      icon: <ShieldCheck className="w-6 h-6" />,
       color: 'from-orange-600 to-amber-600'
     }
   ];
 
+  const showcaseMuseums = {
+    india: [
+      { name: 'National Museum', img: 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['National Museum'] },
+      { name: 'Salar Jung Museum', img: 'https://images.unsplash.com/photo-1566121318576-53b482e56e5c?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['Salar Jung Museum'] },
+      { name: 'Indian Museum', img: 'https://images.unsplash.com/photo-1601807576163-587225545555?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['Indian Museum'] },
+      { name: 'Albert Hall Museum', img: 'https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['Albert Hall Museum'] }
+    ],
+    world: [
+      { name: 'Louvre Museum', img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['Louvre Museum'] },
+      { name: 'Metropolitan Museum of Art', img: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['Metropolitan Museum of Art'] },
+      { name: 'British Museum', img: 'https://images.unsplash.com/photo-1518998053901-5348d3961a04?q=80&w=600&auto=format&fit=crop', details: MUSEUM_DETAILS['British Museum'] }
+    ]
+  };
+
+  const faqs = [
+    {
+      q: "How does the AI booking chatbot help me?",
+      a: "Our smart AI chatbot is equipped to check ticket pricing, show list of museums, and pre-populate your booking parameters (like visitor count, dates, slots). All you do is click 'Book Now' to finish payment!"
+    },
+    {
+      q: "What is your ticket cancellation and refund policy?",
+      a: "You can cancel any active booking directly from the Dashboard. If the ticket status is paid, the amount will be processed for refund securely back to your original source of payment within 5-7 business days."
+    },
+    {
+      q: "How do I verify my ticket at the museum entrance?",
+      a: "After payment, a secure dynamic QR ticket is generated on your dashboard. Simply open the ticket on your mobile phone and present the QR code to the entrance staff for verification."
+    },
+    {
+      q: "Are my online payments secure?",
+      a: "Yes. MTicket integrates Razorpay API, meaning all transactions are processed through banks with high-grade HTTPS encryption, complying with international standard PCI-DSS guidelines."
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50/50">
       {/* Premium Hero Section */}
-      <section className="relative min-h-[90vh] flex items-center bg-slate-950 overflow-hidden pt-20">
+      <section className="relative min-h-[85vh] flex items-center bg-slate-950 overflow-hidden pt-20">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80" 
+            src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=1500" 
             alt="Museum Interior" 
-            className="w-full h-full object-cover opacity-30" 
+            className="w-full h-full object-cover opacity-20" 
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/90 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/95 to-slate-50/50" />
         </div>
         
-        <div className="max-w-7xl mx-auto px-6 relative z-10 w-full">
+        <div className="max-w-7xl mx-auto px-6 relative z-10 w-full text-center">
            <motion.div
              initial={{ opacity: 0, y: 30 }}
              animate={{ opacity: 1, y: 0 }}
-             className="text-center"
+             className="max-w-4xl mx-auto"
            >
-              <span className="inline-block py-2 px-6 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-400 font-bold text-xs uppercase tracking-[0.3em] mb-8">
-                The Future of Heritage
+              <span className="inline-block py-2 px-6 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-xs uppercase tracking-[0.3em] mb-8">
+                Smart Ticketing Ecosystem
               </span>
-              <h1 className="text-5xl md:text-8xl font-black text-white mb-8 leading-tight tracking-tighter">
-                Redefining the <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-600">Museum Experience</span>
+              <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight tracking-tighter">
+                Unifying Heritage &<br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500">Digital Simplicity</span>
               </h1>
-              <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium mb-12">
-                MTicket is more than just a booking portal. It's an intelligent ecosystem designed to bridge the gap between ancient history and modern convenience.
+              <p className="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed mb-12">
+                MTicket leverages conversational AI, dynamic visual dashboards, and secure digital checkouts to reshape how visitors connect with historical landmarks.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-6">
                  <button 
-                   onClick={() => document.getElementById('mission').scrollIntoView({ behavior: 'smooth' })}
-                   className="px-10 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest shadow-2xl shadow-white/10 hover:bg-slate-50 transition-all flex items-center gap-3"
+                   onClick={() => document.getElementById('partners').scrollIntoView({ behavior: 'smooth' })}
+                   className="px-10 py-4.5 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-all flex items-center gap-3 shadow-xl"
                  >
-                    Our Mission <ArrowRight className="w-4 h-4" />
+                    Partner Museums <ArrowRight className="w-4 h-4" />
                  </button>
                  <button 
-                   onClick={() => document.getElementById('tech').scrollIntoView({ behavior: 'smooth' })}
-                   className="px-10 py-5 bg-slate-900 text-white border border-slate-800 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 transition-all"
+                   onClick={() => document.getElementById('mission').scrollIntoView({ behavior: 'smooth' })}
+                   className="px-10 py-4.5 bg-slate-900 text-white border border-slate-800 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-800 transition-all"
                  >
-                    Explore Tech
+                    Our Mission
                  </button>
               </div>
            </motion.div>
         </div>
 
-        {/* Decorative Elements */}
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute top-1/2 -right-24 w-72 h-72 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" />
+        {/* Decorative Glowing Orbs */}
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px]" />
+        <div className="absolute top-1/2 -right-24 w-72 h-72 bg-purple-600/10 rounded-full blur-[100px]" />
       </section>
 
-      {/* Detail Section: The Problem & Solution */}
-      <section id="mission" className="py-24 lg:py-32 relative overflow-hidden">
-         <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-               <motion.div
-                 initial={{ opacity: 0, x: -50 }}
-                 whileInView={{ opacity: 1, x: 0 }}
-                 viewport={{ once: true }}
-               >
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-1 px-0 bg-blue-600 rounded-full" />
-                    <span className="text-blue-600 font-black uppercase tracking-widest text-xs">Innovation in Culture</span>
-                  </div>
-                  <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-8 leading-tight tracking-tighter">
-                    Why MTicket was <br />created?
-                  </h2>
-                  <div className="space-y-6 text-lg text-slate-600 font-medium leading-relaxed">
-                     <p>
-                        Traditionally, visiting a museum meant long queues, physical tickets, and limited information on the go. We saw an opportunity to modernize this journey.
-                     </p>
-                     <p>
-                        MTicket was built to provide a <strong>unified digital entry point</strong>. Whether it's discovering hidden treasures, booking tickets at 2 AM, or getting instant help from our AI Assistant, we ensure technology works for you, not against you.
-                     </p>
-                  </div>
+      {/* Trust Stats Row */}
+      <section className="relative z-20 -mt-16 max-w-7xl mx-auto px-6">
+         <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-xl grid grid-cols-2 lg:grid-cols-4 gap-8">
+            {stats.map((stat, i) => (
+              <div key={i} className="flex items-center gap-4 border-r border-slate-100 last:border-0 pr-4">
+                 <div className={`w-12 h-12 rounded-2xl ${stat.color} flex items-center justify-center shrink-0`}>
+                    {stat.icon}
+                 </div>
+                 <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{stat.value}</h3>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{stat.label}</p>
+                 </div>
+              </div>
+            ))}
+         </div>
+      </section>
 
-                  <div className="mt-12 grid grid-cols-2 gap-8">
-                     <div className="p-6 border-l-4 border-blue-600 bg-slate-50 rounded-r-2xl">
-                        <h4 className="text-2xl font-black text-slate-900 mb-1">01</h4>
-                        <p className="text-xs font-bold text-slate-400 uppercase">Seamless Access</p>
-                     </div>
-                     <div className="p-6 border-l-4 border-indigo-600 bg-slate-50 rounded-r-2xl">
-                        <h4 className="text-2xl font-black text-slate-900 mb-1">24/7</h4>
-                        <p className="text-xs font-bold text-slate-400 uppercase">AI Assistance</p>
-                     </div>
-                  </div>
-               </motion.div>
+      {/* Our Mission & Values */}
+      <section id="mission" className="py-24 max-w-7xl mx-auto px-6">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8"
+            >
+               <div className="flex items-center gap-3">
+                 <span className="w-10 h-[2px] bg-blue-600 rounded-full" />
+                 <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Bridging The Gap</span>
+               </div>
+               <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-tight">
+                 Modernizing access to global heritage
+               </h2>
+               <div className="text-slate-600 space-y-4 font-medium leading-relaxed text-sm">
+                  <p>
+                    Historically, stepping into a museum meant waiting in queues, dealing with physical ticket booklets, and lacking context on seasonal exhibits. We developed MTicket to address these challenges.
+                  </p>
+                  <p>
+                    MTicket works as a decentralized portal partner with state and local museums. Our core objective is simple: enable museum administration to manage slots and empower visitors to purchase tickets from anywhere.
+                  </p>
+               </div>
 
-               <div className="relative">
-                  <div className="aspect-square rounded-[3rem] bg-slate-100 overflow-hidden relative shadow-2xl shadow-slate-200">
-                     <img 
-                       src="https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=80" 
-                       alt="Art Gallery" 
-                       className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 hover:scale-110" 
-                     />
-                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+               <div className="grid grid-cols-3 gap-6 pt-4">
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                     <h4 className="text-lg font-black text-blue-600">01</h4>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">One-Click Entry</p>
                   </div>
-                  {/* Floating Stat Card */}
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="absolute -bottom-10 -left-10 p-8 bg-white rounded-3xl shadow-2xl shadow-blue-200 border border-blue-50"
-                  >
-                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                           <Globe className="w-7 h-7" />
-                        </div>
-                        <div>
-                           <p className="text-2xl font-black text-slate-900 tracking-tighter">Global</p>
-                           <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Standards</p>
-                        </div>
-                     </div>
-                  </motion.div>
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                     <h4 className="text-lg font-black text-indigo-600">24/7</h4>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">AI Assistant</p>
+                  </div>
+                  <div className="p-4 bg-white border border-slate-100 rounded-2xl">
+                     <h4 className="text-lg font-black text-purple-600">Secure</h4>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">QR Passes</p>
+                  </div>
+               </div>
+            </motion.div>
+
+            {/* Visual Side Banner */}
+            <div className="relative">
+               <div className="aspect-[4/3] rounded-[2rem] bg-slate-200 overflow-hidden shadow-2xl border border-white">
+                  <img 
+                    src="https://images.unsplash.com/photo-1518998053901-5348d3961a04?auto=format&fit=crop&q=80&w=800" 
+                    alt="Museum Art Exhibit" 
+                    className="w-full h-full object-cover" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+               </div>
+               
+               <div className="absolute -bottom-8 -left-8 bg-white border border-slate-100 rounded-3xl p-6 shadow-xl flex items-center gap-4">
+                  <div className="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-100">
+                     <Globe className="w-6 h-6" />
+                  </div>
+                  <div>
+                     <p className="text-sm font-black text-slate-900">Contactless Entry</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Fast-Pass Verified</p>
+                  </div>
                </div>
             </div>
          </div>
       </section>
 
-      {/* Detailed Features Grid */}
-      <section id="tech" className="py-24 lg:py-32 bg-slate-50">
+      {/* Interactive Partner Museums Showcase */}
+      <section id="partners" className="py-24 bg-white border-y border-slate-100">
          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center max-w-3xl mx-auto mb-20">
-               <h2 className="text-4xl font-black text-slate-900 mb-6 tracking-tighter">Powered by Modern Technology</h2>
-               <p className="text-slate-500 font-medium">We use cutting-edge tools to ensure your journey from the website to the museum entrance is flawless.</p>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+               <div>
+                  <div className="flex items-center gap-2 mb-4">
+                     <Landmark className="w-5 h-5 text-blue-600 animate-pulse" />
+                     <span className="text-xs font-black uppercase text-blue-600 tracking-widest">Our network</span>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">Partnered Museums & Venues</h2>
+               </div>
+               
+               {/* Country Tabs */}
+               <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 w-fit shrink-0">
+                  <button 
+                    onClick={() => setActiveMuseumTab('india')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
+                      activeMuseumTab === 'india' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                     India Partners
+                  </button>
+                  <button 
+                    onClick={() => setActiveMuseumTab('world')}
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
+                      activeMuseumTab === 'world' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                     Global Partners
+                  </button>
+               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-               {techFeatures.map((feature, i) => (
-                 <motion.div
-                   key={i}
-                   initial={{ opacity: 0, y: 20 }}
-                   whileInView={{ opacity: 1, y: 0 }}
-                   viewport={{ once: true }}
-                   transition={{ delay: i * 0.1 }}
-                   className="p-8 bg-white rounded-[2.5rem] border border-white shadow-xl shadow-slate-200/50 hover:shadow-2xl transition-all group"
-                 >
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-8 shadow-lg group-hover:scale-110 transition-transform`}>
-                       {feature.icon}
+            {/* Museum Cards Grid */}
+            <AnimatePresence mode="wait">
+               <motion.div
+                 key={activeMuseumTab}
+                 initial={{ opacity: 0, y: 15 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -15 }}
+                 transition={{ duration: 0.25 }}
+                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+               >
+                  {showcaseMuseums[activeMuseumTab].map((museum) => (
+                    <div
+                      key={museum.name}
+                      className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden hover:border-blue-200 transition-all duration-300 group shadow-sm flex flex-col justify-between"
+                    >
+                       <div>
+                          <div className="aspect-[4/3] overflow-hidden relative">
+                             <img 
+                               src={museum.img} 
+                               alt={museum.name} 
+                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                             />
+                             <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[9px] font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                                <MapPin className="w-3 h-3 text-blue-400" />
+                                {museum.details?.location.split(',').slice(-1)[0].trim() || 'Partner'}
+                             </div>
+                          </div>
+                          <div className="p-5 space-y-3">
+                             <h4 className="font-black text-slate-800 text-base leading-tight line-clamp-1">{museum.name}</h4>
+                             <p className="text-xs text-slate-500 line-clamp-3 font-medium leading-relaxed">{museum.details?.desc}</p>
+                          </div>
+                       </div>
+                       
+                       <div className="px-5 pb-5 pt-3 border-t border-slate-100 bg-white">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Famous For</p>
+                          <p className="text-[11px] font-bold text-slate-700 line-clamp-1">{museum.details?.famousFor || 'Art & History collection.'}</p>
+                       </div>
                     </div>
-                    <h4 className="text-lg font-black text-slate-900 mb-4 tracking-tight">{feature.title}</h4>
-                    <p className="text-sm text-slate-500 leading-relaxed font-medium">{feature.desc}</p>
-                 </motion.div>
-               ))}
-            </div>
+                  ))}
+               </motion.div>
+            </AnimatePresence>
          </div>
       </section>
 
-      {/* Stats & Trust Section */}
-      <section className="py-24 lg:py-32">
-         <div className="max-w-7xl mx-auto px-6 text-center">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
-               {stats.map((stat, i) => (
-                 <div key={i}>
-                    <h3 className="text-5xl font-black text-slate-900 mb-2 tracking-tighter">{stat.value}</h3>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">{stat.label}</p>
+      {/* Tech Pillars Section */}
+      <section className="py-24 max-w-7xl mx-auto px-6">
+         <div className="text-center max-w-3xl mx-auto mb-20">
+            <span className="text-xs font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-4 py-1.5 rounded-full">Core Technologies</span>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 mt-6 tracking-tighter">Built with modern architecture</h2>
+            <p className="text-slate-500 font-medium mt-3 text-sm">We combine cutting-edge tooling to ensure your journey is fast, secure, and intuitive.</p>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {techFeatures.map((feature, i) => (
+              <div 
+                key={i}
+                className="p-8 bg-white border border-slate-100 rounded-[2rem] shadow-sm hover:shadow-md transition-all group"
+              >
+                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center text-white mb-6 shadow-md group-hover:scale-105 transition-transform`}>
+                    {feature.icon}
                  </div>
-               ))}
+                 <h4 className="text-base font-black text-slate-800 mb-3 tracking-tight">{feature.title}</h4>
+                 <p className="text-xs text-slate-500 leading-relaxed font-semibold">{feature.desc}</p>
+              </div>
+            ))}
+         </div>
+      </section>
+
+      {/* Accordion FAQ Section */}
+      <section className="py-24 bg-white border-t border-slate-100">
+         <div className="max-w-4xl mx-auto px-6">
+            <div className="text-center mb-16">
+               <h2 className="text-3xl font-black text-slate-900 tracking-tighter">Frequently Asked Questions</h2>
+               <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Answers to common booking queries</p>
+            </div>
+
+            <div className="space-y-4">
+               {faqs.map((faq, i) => {
+                 const isOpen = activeFaq === i;
+                 return (
+                   <div 
+                     key={i} 
+                     className="border border-slate-100 rounded-2xl overflow-hidden bg-slate-50/50 hover:border-blue-100 transition-colors"
+                   >
+                      <button
+                        onClick={() => setActiveFaq(isOpen ? null : i)}
+                        className="w-full p-6 text-left flex justify-between items-center gap-4 bg-white"
+                      >
+                         <span className="font-black text-slate-850 text-sm">{faq.q}</span>
+                         <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                      </button>
+                      
+                      <AnimatePresence initial={false}>
+                        {isOpen && (
+                          <motion.div
+                            initial={{ height: 0 }}
+                            animate={{ height: 'auto' }}
+                            exit={{ height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                             <p className="p-6 text-xs text-slate-500 font-medium leading-relaxed border-t border-slate-100/50 bg-slate-50/20">
+                                {faq.a}
+                             </p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                   </div>
+                 );
+               })}
             </div>
          </div>
       </section>
 
-      {/* Call to Action */}
-      <section className="pb-24 lg:pb-32 px-6">
-         <div className="max-w-7xl mx-auto bg-slate-950 rounded-[3rem] p-12 lg:p-24 relative overflow-hidden text-center">
-            <div className="relative z-10">
-               <h2 className="text-4xl md:text-5xl font-black text-white mb-8 tracking-tighter">Ready to Start Your Journey?</h2>
-               <p className="text-slate-400 max-w-xl mx-auto mb-10 text-lg">Join thousands of others who are exploring culture the smart way.</p>
-               <Link to="/booking" className="inline-flex items-center gap-3 px-12 py-6 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-100 transition-all">
-                  Book Your Ticket <ArrowRight className="w-5 h-5" />
+      {/* Premium CTA section */}
+      <section className="py-24 px-6">
+         <div className="max-w-7xl mx-auto bg-slate-950 rounded-[3rem] p-12 lg:p-20 relative overflow-hidden text-center">
+            <div className="relative z-10 max-w-2xl mx-auto">
+               <h2 className="text-3xl md:text-5xl font-black text-white mb-6 tracking-tighter">Ready to experience heritage?</h2>
+               <p className="text-slate-400 mb-10 text-sm leading-relaxed">Book museum entry slots, reserve guides, and manage all your historical travels in a single page.</p>
+               <Link to="/booking" className="inline-flex items-center gap-3 px-10 py-5 bg-white text-slate-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-slate-100 transition-all shadow-xl">
+                  Book Your Ticket <ArrowRight className="w-4 h-4" />
                </Link>
             </div>
-            {/* Abstract Background for CTA */}
-            <div className="absolute top-0 right-0 w-full h-full opacity-20 pointer-events-none">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 w-full h-full opacity-10 pointer-events-none">
                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600 rounded-full blur-[100px] -mr-48 -mt-48" />
                <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-600 rounded-full blur-[100px] -ml-48 -mb-48" />
             </div>

@@ -23,7 +23,18 @@ class PaymentController extends Controller
         if ($request->payment_status === 'successful') {
             $ticket = Ticket::find($request->ticket_id);
             $ticket->update(['status' => 'paid']);
-            // Optionally generate QR code here too
+            
+            // Create booking notification in DB
+            $eventName = $ticket->event_name ?? 'Museum Tour';
+            if ($ticket->user_id) {
+                \App\Models\Notification::create([
+                    'user_id' => $ticket->user_id,
+                    'type' => 'success',
+                    'title' => 'Booking Confirmed!',
+                    'message' => "Your ticket for {$eventName} on {$ticket->date} ({$ticket->time_slot}) has been successfully booked. Ticket ID: #{$ticket->id}.",
+                    'is_read' => false
+                ]);
+            }
         }
 
         return response()->json([

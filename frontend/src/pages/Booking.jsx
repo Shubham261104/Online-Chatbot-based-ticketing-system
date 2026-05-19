@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
 import { toast } from 'react-toastify';
+import confetti from 'canvas-confetti';
 import TicketModal from '../components/TicketModal';
 import MuseumSelector from '../components/MuseumSelector';
 import { getMuseumInfo } from '../data/museumData';
@@ -46,6 +47,14 @@ export default function Booking() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [confirmedTicket, setConfirmedTicket] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [slots, setSlots] = useState(DEFAULT_SLOTS);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMuseumModalOpen, setIsMuseumModalOpen] = useState(false);
@@ -200,6 +209,12 @@ export default function Booking() {
       setConfirmedTicket({ ...ticket, orderId });
       setCurrentStep(5);
       toast.success('Booking confirmed!');
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+      window.dispatchEvent(new Event('activity-completed'));
     } catch (err) {
       const msg = err?.response?.data?.message || err?.response?.data?.error || 'Booking failed. Please login first.';
       toast.error(msg);
@@ -312,7 +327,9 @@ export default function Booking() {
         </div>
       </div>
       {currentStep < 4 && (
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => {
             if (!selectedMuseum) {
               toast.error('Please choose a museum first!');
@@ -324,46 +341,112 @@ export default function Booking() {
           className="w-full mt-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-blue-200"
         >
           Proceed to Payment
-        </button>
+        </motion.button>
       )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F8F9FB] flex flex-col pt-24">
-      <div className="max-w-7xl mx-auto px-6 w-full pt-10 mb-8">
-        <h1 className="text-3xl font-black text-slate-900 mb-2">Book Your Tickets</h1>
-        <p className="text-gray-500 font-medium">Select your visit details and book your tickets in easy steps</p>
+    <div className="min-h-screen bg-[#F8F9FB] flex flex-col pt-24 relative overflow-hidden">
+      {/* Background Ambient Blobs */}
+      <motion.div 
+        animate={{
+          x: [0, 40, -20, 0],
+          y: [0, -50, 30, 0],
+        }}
+        transition={{
+          duration: 15,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="absolute top-1/4 left-1/12 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none z-0"
+      />
+      <motion.div 
+        animate={{
+          x: [0, -30, 50, 0],
+          y: [0, 40, -40, 0],
+        }}
+        transition={{
+          duration: 20,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="absolute bottom-1/3 right-1/12 w-80 h-80 bg-amber-400/10 rounded-full blur-[100px] pointer-events-none z-0"
+      />
+
+      <div className="max-w-7xl mx-auto px-6 w-full pt-10 mb-8 z-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-900 mb-2">Book Your Tickets</h1>
+            <p className="text-gray-500 font-medium">Select your visit details and book your tickets in easy steps</p>
+          </div>
+          <div className="bg-gradient-to-r from-slate-900 to-slate-950 text-white px-6 py-3 rounded-2xl flex items-center gap-3 border border-white/10 shadow-xl self-start md:self-center">
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </div>
+            <div className="text-xs">
+              <p className="text-amber-500 font-bold uppercase tracking-wider text-[9px]">Live Server Time</p>
+              <p className="font-black font-mono text-[11px] tracking-tight">
+                {currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: '2-digit', year: 'numeric' })} |{' '}
+                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+              </p>
+            </div>
+          </div>
+        </div>
         {!isLoggedIn && <AuthBanner />}
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row gap-8 mb-20">
+      <div className="max-w-7xl mx-auto px-6 w-full flex flex-col lg:flex-row gap-8 mb-20 z-10">
 
         {/* Steps sidebar */}
         <div className="lg:w-1/4 space-y-3">
           {steps.map(step => (
-            <div
+            <motion.div
               key={step.id}
+              whileHover={{ scale: currentStep === step.id ? 1.02 : 1.01 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className={`flex items-center gap-4 p-5 rounded-2xl border transition-all ${
                 currentStep === step.id
-                  ? 'bg-white border-blue-100 shadow-lg shadow-blue-100/50 relative overflow-hidden'
+                  ? 'bg-white border-blue-100 shadow-xl shadow-blue-100/30 relative overflow-hidden'
                   : currentStep > step.id
-                  ? 'bg-green-50 border-green-100 opacity-80'
-                  : 'bg-white/50 border-transparent opacity-50'
+                  ? 'bg-green-50/80 border-green-100 opacity-90'
+                  : 'bg-white/40 border-transparent opacity-50'
               }`}
             >
-              {currentStep === step.id && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600" />}
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold ${
-                currentStep > step.id ? 'bg-green-500 text-white' : currentStep === step.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-100 text-gray-400'
+              {currentStep === step.id && (
+                <motion.div 
+                  layoutId="activeStepLine"
+                  className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-blue-600 to-indigo-600" 
+                />
+              )}
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold transition-all duration-300 ${
+                currentStep > step.id 
+                  ? 'bg-green-500 text-white' 
+                  : currentStep === step.id 
+                  ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-200' 
+                  : 'bg-gray-100 text-gray-400'
               }`}>
-                {currentStep > step.id ? <CheckCircle className="w-5 h-5" /> : step.id}
+                {currentStep > step.id ? (
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
+                    <CheckCircle className="w-5 h-5" />
+                  </motion.div>
+                ) : step.id}
               </div>
               <div>
-                <h4 className={`font-bold text-sm ${currentStep === step.id ? 'text-gray-900' : 'text-gray-500'}`}>{step.name}</h4>
+                <h4 className={`font-bold text-sm ${currentStep === step.id ? 'text-gray-900 font-extrabold' : 'text-gray-500'}`}>{step.name}</h4>
                 <p className="text-[11px] text-gray-400 uppercase tracking-wider">{step.sub}</p>
               </div>
-              {currentStep === step.id && <ChevronRight className="ml-auto w-5 h-5 text-blue-600" />}
-            </div>
+              {currentStep === step.id && (
+                <motion.div
+                  animate={{ x: [0, 4, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                  className="ml-auto"
+                >
+                  <ChevronRight className="w-5 h-5 text-blue-600" />
+                </motion.div>
+              )}
+            </motion.div>
           ))}
         </div>
 
@@ -392,8 +475,17 @@ export default function Booking() {
 
                 {selectedMuseum && (
                   <div className="space-y-6 mb-8">
-                    <div className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl text-white shadow-lg shadow-blue-100 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-3xl text-white shadow-lg shadow-blue-100 flex items-center justify-between relative overflow-hidden"
+                    >
+                      <motion.div 
+                        className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0"
+                        animate={{ x: ['-100%', '100%'] }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                      />
+                      <div className="flex items-center gap-4 relative z-10">
                         <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
                           <Landmark className="w-6 h-6 text-white" />
                         </div>
@@ -402,10 +494,10 @@ export default function Booking() {
                           <h4 className="text-lg font-black">{selectedMuseum}</h4>
                         </div>
                       </div>
-                      <div className="hidden sm:block">
+                      <div className="hidden sm:block relative z-10">
                         <CheckCircle className="w-8 h-8 text-blue-200 opacity-50" />
                       </div>
-                    </div>
+                    </motion.div>
 
                     <motion.div 
                       initial={{ opacity: 0, y: 10 }}
@@ -466,13 +558,15 @@ export default function Booking() {
                   </div>
                   <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 transition-opacity ${slotsLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
                     {slots.map((slot, i) => (
-                      <button
+                      <motion.button
                         key={i}
+                        whileHover={!(slot.status === 'Sold Out' || slot.status === 'Time Passed') ? { y: -4, scale: 1.02, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)" } : {}}
+                        whileTap={!(slot.status === 'Sold Out' || slot.status === 'Time Passed') ? { scale: 0.98 } : {}}
                         disabled={slot.status === 'Sold Out' || slot.status === 'Time Passed'}
                         onClick={() => set('timeSlot', slot.time)}
                         className={`p-5 rounded-2xl border text-left transition-all relative ${
                           form.timeSlot === slot.time
-                            ? 'bg-white border-blue-600 shadow-xl ring-2 ring-blue-600 ring-offset-2'
+                            ? 'bg-white border-blue-600 shadow-xl ring-2 ring-blue-600/30'
                             : (slot.status === 'Sold Out' || slot.status === 'Time Passed')
                             ? 'bg-gray-50 border-gray-100 opacity-50 cursor-not-allowed grayscale'
                             : 'bg-gray-50 border-transparent hover:border-gray-200'
@@ -496,7 +590,7 @@ export default function Booking() {
                           </div>
                           <span className="text-[10px] font-bold text-gray-400">{slot.remaining} left</span>
                         </div>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
@@ -554,7 +648,11 @@ export default function Booking() {
                   { label: 'Senior Citizens', key: 'seniors', min: 0, note: '(Age 60+)', mult: 0.7 },
                   { label: 'Foreigners', key: 'foreigners', min: 0, note: '(International)', mult: 2.0 },
                 ].map(({ label, key, min, note, mult }) => (
-                  <div key={key} className="flex items-center justify-between bg-gray-50 rounded-2xl p-6 mb-4 hover:bg-slate-100/50 transition-colors border border-transparent hover:border-slate-200">
+                  <motion.div 
+                    key={key} 
+                    whileHover={{ x: 4 }}
+                    className="flex items-center justify-between bg-gray-50 rounded-2xl p-6 mb-4 hover:bg-slate-100/50 transition-colors border border-transparent hover:border-slate-200"
+                  >
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-black text-gray-900">{label}</p>
@@ -563,13 +661,32 @@ export default function Booking() {
                       <p className="text-xs text-gray-400 font-medium">{note}</p>
                     </div>
                     <div className="flex items-center gap-4">
-                      <button onClick={() => set(key, Math.max(min, form[key] - 1))}
-                        className="w-10 h-10 bg-white border border-gray-200 rounded-xl font-black text-xl text-gray-700 hover:border-blue-600 hover:text-blue-600 transition shadow-sm">−</button>
-                      <span className="text-2xl font-black text-gray-900 w-6 text-center">{form[key]}</span>
-                      <button onClick={() => set(key, form[key] + 1)}
-                        className="w-10 h-10 bg-blue-600 rounded-xl font-black text-xl text-white hover:bg-blue-700 transition shadow-lg shadow-blue-200">+</button>
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => set(key, Math.max(min, form[key] - 1))}
+                        className="w-10 h-10 bg-white border border-gray-200 rounded-xl font-black text-xl text-gray-700 hover:border-blue-600 hover:text-blue-600 transition shadow-sm"
+                      >
+                        −
+                      </motion.button>
+                      <motion.span 
+                        key={form[key]}
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="text-2xl font-black text-gray-900 w-6 text-center block"
+                      >
+                        {form[key]}
+                      </motion.span>
+                      <motion.button 
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => set(key, form[key] + 1)}
+                        className="w-10 h-10 bg-blue-600 rounded-xl font-black text-xl text-white hover:bg-blue-700 transition shadow-lg shadow-blue-200"
+                      >
+                        +
+                      </motion.button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
 
                 <div className="flex justify-between mt-8">
@@ -614,12 +731,14 @@ export default function Booking() {
                 <div className="space-y-4 mb-8">
                   <h3 className="text-sm font-bold text-gray-700 mb-3">Select Ticket Category</h3>
                   {TICKET_TYPES.map((type) => (
-                    <button
+                    <motion.button
                       key={type.type}
+                      whileHover={{ y: -4, scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                       onClick={() => set('ticketType', type)}
                       className={`w-full p-6 rounded-3xl border-2 text-left transition-all relative ${
                         form.ticketType.type === type.type
-                          ? 'bg-blue-50 border-blue-600 shadow-lg'
+                          ? 'bg-blue-50/50 border-blue-600 shadow-lg'
                           : 'bg-white border-gray-100 hover:border-gray-200'
                       }`}
                     >
@@ -657,7 +776,7 @@ export default function Booking() {
                           </div>
                         </div>
                       </div>
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
 
@@ -737,13 +856,15 @@ export default function Booking() {
                       { id: 'upi', label: 'UPI', icon: <Smartphone className="w-5 h-5" /> },
                       { id: 'qr', label: 'QR Code', icon: <QrCode className="w-5 h-5" /> },
                     ].map((m) => (
-                      <button
+                      <motion.button
                         key={m.id}
                         type="button"
+                        whileHover={{ y: -3, scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         onClick={() => setPaymentMethod(m.id)}
                         className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
                           paymentMethod === m.id
-                            ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-md'
+                            ? 'bg-blue-50/50 border-blue-600 text-blue-700 shadow-md'
                             : 'bg-white border-gray-100 text-gray-500 hover:border-gray-200'
                         }`}
                       >
@@ -753,7 +874,7 @@ export default function Booking() {
                           {m.icon}
                         </div>
                         <span className="font-black text-sm">{m.label}</span>
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
 
@@ -857,11 +978,21 @@ export default function Booking() {
 
             {/* STEP 5 */}
             {currentStep === 5 && confirmedTicket && (
-              <motion.div key="s5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-10 border border-gray-100 text-center">
-                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <motion.div 
+                key="s5" 
+                initial={{ opacity: 0, scale: 0.95 }} 
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", duration: 0.8 }}
+                className="bg-white rounded-[2rem] shadow-xl shadow-gray-200/50 p-10 border border-gray-100 text-center"
+              >
+                <motion.div 
+                  initial={{ scale: 0, rotate: -45 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                  className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6"
+                >
                   <CheckCircle className="w-12 h-12 text-green-600" />
-                </div>
+                </motion.div>
                 <h2 className="text-3xl font-black text-gray-900 mb-2">Booking Confirmed! 🎉</h2>
                 <p className="text-gray-500 mb-8">Your e-ticket has been booked successfully.</p>
 

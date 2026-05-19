@@ -56,8 +56,41 @@ class NotificationController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $notifications = Notification::where('user_id', $userId)
-            ->orWhereNull('user_id')
+
+        try {
+            $targetDate = now()->addDays(2)->toDateString();
+            $upcomingTickets = \App\Models\Ticket::where('user_id', $userId)
+                ->where('status', 'paid')
+                ->where('date', $targetDate)
+                ->get();
+
+            foreach ($upcomingTickets as $ticket) {
+                $eventName = $ticket->event_name ?? 'Museum Tour';
+                
+                $exists = Notification::where('user_id', $userId)
+                    ->where('type', 'reminder')
+                    ->where('title', 'Upcoming Visit Reminder')
+                    ->where('message', 'like', "%Ticket #{$ticket->id}%")
+                    ->exists();
+
+                if (!$exists) {
+                    Notification::create([
+                        'user_id' => $userId,
+                        'type' => 'reminder',
+                        'title' => 'Upcoming Visit Reminder',
+                        'message' => "Reminder: Your visit to {$eventName} is in 2 days (on {$ticket->date} at {$ticket->time_slot}). Ticket #{$ticket->id}.",
+                        'is_read' => false
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // Fallback to prevent endpoint crashes
+        }
+
+        $notifications = Notification::where(function($query) use ($userId) {
+                $query->where('user_id', $userId)
+                      ->orWhereNull('user_id');
+            })
             ->latest()
             ->take(20)
             ->get();

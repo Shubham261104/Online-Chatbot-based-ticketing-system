@@ -63,12 +63,21 @@ const AdminDashboard = () => {
       fetchAllData();
     }
 
-    // Set up real-time polling every 30 seconds
+    const handleActivity = () => {
+      fetchAllData(true);
+    };
+
+    window.addEventListener('activity-completed', handleActivity);
+
+    // Set up real-time polling every 5 seconds for live telemetry
     const interval = setInterval(() => {
       fetchAllData(true); // Silent update
-    }, 30000);
+    }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('activity-completed', handleActivity);
+    };
   }, []);
 
   const fetchAllData = async (silent = false) => {
@@ -114,7 +123,7 @@ const AdminDashboard = () => {
       await api.post('/admin/notifications', notifForm);
       toast.success('Notification sent successfully!');
       setNotifForm({ title: '', message: '', type: 'info', target: 'all' });
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to send notification');
     } finally {
@@ -129,7 +138,7 @@ const AdminDashboard = () => {
       toast.success('User created successfully');
       setIsCreateModalOpen(false);
       setCreateForm({ name: '', email: '', password: '', role: 'user' });
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create user');
     }
@@ -140,7 +149,7 @@ const AdminDashboard = () => {
     try {
       await api.delete(`/admin/users/${id}`);
       toast.success('User deleted successfully');
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to delete user');
     }
@@ -154,7 +163,7 @@ const AdminDashboard = () => {
       setIsBlockModalOpen(false);
       setUserToBlock(null);
       setBlockReason('');
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to block user');
     }
@@ -165,7 +174,7 @@ const AdminDashboard = () => {
     try {
       await api.post(`/admin/users/${id}/unblock`);
       toast.success('User unblocked successfully');
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to unblock user');
     }
@@ -180,7 +189,7 @@ const AdminDashboard = () => {
       setIsReplyModalOpen(false);
       setSelectedSupport(null);
       setReplyForm({ status: 'open', admin_reply: '' });
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to update support ticket');
     } finally {
@@ -193,7 +202,7 @@ const AdminDashboard = () => {
     try {
       await api.delete(`/admin/support/${id}`);
       toast.success('Ticket deleted');
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to delete ticket');
     }
@@ -204,7 +213,7 @@ const AdminDashboard = () => {
     try {
       await api.post('/admin/settings', systemSettings);
       toast.success('System settings saved securely!');
-      fetchAllData();
+      fetchAllData(true);
     } catch (err) {
       toast.error('Failed to save settings');
     } finally {
@@ -236,6 +245,8 @@ const AdminDashboard = () => {
       await api.post('/admin/slots/bulk-update', { slots: daySlots });
       toast.success('Seating and pricing updated for this day!');
       fetchSeatingData(seatingDate);
+      fetchAllData(true);
+      window.dispatchEvent(new Event('activity-completed'));
     } catch (err) {
       toast.error('Failed to update slots');
     } finally {

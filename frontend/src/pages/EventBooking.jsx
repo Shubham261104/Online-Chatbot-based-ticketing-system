@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Users, Clock, CreditCard, CheckCircle, ArrowLeft, Info, Ticket, Landmark, ShieldCheck, Zap, Star } from 'lucide-react';
 import api from '../api/api';
 import { toast } from 'react-toastify';
+import confetti from 'canvas-confetti';
 import TicketModal from '../components/TicketModal';
 
 export default function EventBooking() {
@@ -52,6 +53,10 @@ export default function EventBooking() {
         timeSlot: event.time,
         adults: form.adults,
         children: form.children,
+        students: 0,
+        females: 0,
+        seniors: 0,
+        foreigners: 0,
         name: form.name,
         email: form.email,
         event_name: event.title,
@@ -72,6 +77,11 @@ export default function EventBooking() {
       setConfirmedTicket({ ...ticket, orderId: res.data.razorpay_order_id });
       setStep(3);
       toast.success('Event booking confirmed!');
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Booking failed.');
     } finally {

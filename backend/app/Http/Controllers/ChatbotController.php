@@ -36,9 +36,19 @@ class ChatbotController extends Controller
             'sender' => 'bot'
         ]);
 
-        return response()->json([
+        $responseData = [
             'reply' => $reply
-        ]);
+        ];
+
+        if (str_contains($text, 'guide') || str_contains($text, 'map') || str_contains($text, 'explore')) {
+            $responseData['attachment'] = [
+                'name' => 'National_Museum_Visitor_Guide.pdf',
+                'url' => '#',
+                'size' => '2.4 MB'
+            ];
+        }
+
+        return response()->json($responseData);
     }
 
     /**
@@ -65,7 +75,7 @@ class ChatbotController extends Controller
             ],
             'guide' => [
                 'keywords' => ['guide', 'visitor guide', 'map', 'tour', 'explore', 'what to see', 'attractions'],
-                'reply' => "🗺️ **Visitor Guide Highlights:**\n• Level 1: Ancient Artifacts & Sculptures\n• Level 2: Medieval History & Armory\n• Level 3: Modern Art & Exhibitions\n• Cafeteria: Ground floor near Exit.\n\nAudio guides are available at the reception for ₹150!"
+                'reply' => "🏛️ **Comprehensive Visitor Guide & Highlights:**\n\n**📍 Gallery Layout:**\n• **Ground Floor**: Reception desk, Cloakroom, Souvenir Emporium, and Garden Cafeteria.\n• **Level 1 (Ancient Era)**: Harappan Civilization artifacts, Buddhist Art Collection, and Maurya & Gupta sculptures.\n• **Level 2 (Medieval & Royal)**: Mughal Miniature Paintings, Rajput Armoury & Weapons, and Tanjore paintings.\n• **Level 3 (Modern & Interactive)**: Contemporary Indian Paintings, Science & Technology Pavilion, and Open-air Deck.\n\n**✨ Top Must-See Artifacts:**\n• *Dancing Girl of Mohenjo-daro* (Indus Valley Gallery)\n• *The Veiled Rebecca* (Salar Jung Collection)\n• *Ashokan Pillar Capital* (Sculpture Court)\n• *The 4,000-year-old Mummy Exhibit* (Egyptian Gallery)\n\n**🎧 Visitor Amenities:**\n• **Audio Guides**: Available at reception in English, Hindi, French, Spanish, and German (₹150 per device).\n• **Photography**: Allowed with smartphones for personal use (No flash/tripods).\n• **Accessibility**: Wheelchairs and elevators are available on all floors free of charge."
             ],
             'history' => [
                 'keywords' => ['history', 'conversations', 'recent conversations', 'past'],
@@ -134,9 +144,16 @@ class ChatbotController extends Controller
             ->latest()
             ->take(50)
             ->get()
-            ->reverse();
+            ->reverse()
+            ->values();
 
         return response()->json($logs);
+    }
+
+    public function clearHistory()
+    {
+        ChatLog::where('user_id', auth('api')->id())->delete();
+        return response()->json(['message' => 'History cleared successfully']);
     }
 
     private function containsAny($text, $array)

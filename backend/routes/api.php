@@ -18,7 +18,6 @@ Route::post('/google-register', [AuthController::class, 'googleRegister']);
 Route::get('/slots', [TicketController::class, 'getSlots']);
 Route::post('/book-ticket', [TicketController::class, 'book']);
 Route::post('/payment', [PaymentController::class, 'store']);
-Route::post('/chatbot', [ChatbotController::class, 'message']);
 Route::post('/verify-payment', [TicketController::class, 'verifyPayment']);
 Route::post('/support', [SupportController::class, 'store']);
 
@@ -30,6 +29,8 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/tickets', [TicketController::class, 'userHistory']);
     Route::post('/tickets/{id}/cancel', [TicketController::class, 'cancel']);
     Route::get('/chatbot/history', [ChatbotController::class, 'getHistory']);
+    Route::post('/chatbot/history/clear', [ChatbotController::class, 'clearHistory']);
+    Route::post('/chatbot', [ChatbotController::class, 'message']);
 });
 
 // Admin APIs

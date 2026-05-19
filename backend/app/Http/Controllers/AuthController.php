@@ -48,6 +48,14 @@ class AuthController extends Controller
         }
 
 
+        \App\Models\Notification::create([
+            'user_id' => $user->id,
+            'type' => 'success',
+            'title' => 'Welcome to MTicket!',
+            'message' => "Hi {$user->name}, thank you for registering! Explore our museums and events today.",
+            'is_read' => false
+        ]);
+
         $token = JWTAuth::fromUser($user);
 
         return response()->json([
@@ -74,6 +82,14 @@ class AuthController extends Controller
                 'role' => 'user'
             ]);
 
+            \App\Models\Notification::create([
+                'user_id' => $user->id,
+                'type' => 'success',
+                'title' => 'Welcome to MTicket!',
+                'message' => "Hi {$user->name}, thank you for registering via Google! Explore our museums and events today.",
+                'is_read' => false
+            ]);
+
             // Send Welcome Email
             try {
                 Mail::to($user->email)->send(new WelcomeEmail($user));
@@ -93,6 +109,14 @@ class AuthController extends Controller
 
         // Update last login
         $user->update(['last_login_at' => now()]);
+
+        \App\Models\Notification::create([
+            'user_id' => $user->id,
+            'type' => 'info',
+            'title' => 'Successful Login',
+            'message' => 'You logged in successfully via Google.',
+            'is_read' => false
+        ]);
 
         return response()->json([
             'user' => $user,
@@ -120,6 +144,14 @@ class AuthController extends Controller
         }
 
         $user->update(['last_login_at' => now()]);
+
+        \App\Models\Notification::create([
+            'user_id' => $user->id,
+            'type' => 'info',
+            'title' => 'Successful Login',
+            'message' => 'Welcome back! You logged in successfully.',
+            'is_read' => false
+        ]);
 
         return response()->json([
             'user' => $user,
@@ -157,15 +189,25 @@ class AuthController extends Controller
             'name' => 'sometimes|string|max:255',
             'phone' => 'nullable|string|max:20',
             'location' => 'nullable|string|max:255',
-            'profile_picture' => 'nullable|string'
+            'profile_picture' => 'nullable|string',
+            'cover_photo' => 'nullable|string'
         ]);
 
         if ($request->has('name')) $user->name = $request->name;
         if ($request->has('phone')) $user->phone = $request->phone;
         if ($request->has('location')) $user->location = $request->location;
         if ($request->has('profile_picture')) $user->profile_picture = $request->profile_picture;
+        if ($request->has('cover_photo')) $user->cover_photo = $request->cover_photo;
 
         $user->save();
+
+        \App\Models\Notification::create([
+            'user_id' => $user->id,
+            'type' => 'success',
+            'title' => 'Profile Updated',
+            'message' => 'Your profile information has been successfully updated.',
+            'is_read' => false
+        ]);
 
         return response()->json([
             'message' => 'Profile updated successfully',

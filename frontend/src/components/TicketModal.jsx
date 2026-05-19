@@ -7,7 +7,28 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
   if (!ticket) return null;
 
   const museumImage = "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?q=80&w=1000&auto=format&fit=crop";
+  const EVENT_IMAGES = {
+    'Treasures of Ancient Egypt': 'https://images.unsplash.com/photo-1503174971373-b1f69850bded?q=80&w=1000&auto=format&fit=crop',
+    'Rhythms of India': 'https://images.unsplash.com/photo-1514222139-b786bb23c828?q=80&w=1000&auto=format&fit=crop',
+    'Pottery Workshop for Kids': 'https://images.unsplash.com/photo-1565191999001-551c187427bb?q=80&w=1000&auto=format&fit=crop',
+    'Museum Night: After Hours': 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?q=80&w=1000&auto=format&fit=crop',
+    'Renaissance Masterpieces': 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=1000&auto=format&fit=crop',
+    'Echoes of Mozart & Beethoven': 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=1000&auto=format&fit=crop',
+    'Ancient Calligraphy Masterclass': 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?q=80&w=1000&auto=format&fit=crop',
+    'Cosmic Journey: Stargazing Night': 'https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=1000&auto=format&fit=crop'
+  };
+
+  const eventImage = EVENT_IMAGES[ticket.event_name];
   const ticketId = `MUS${ticket.date.replace(/-/g, '')}${String(ticket.id).padStart(5, '0')}`;
+
+  const getCategory = () => {
+    if (!ticket.event_name) return "MUSEUM ENTRY";
+    const name = ticket.event_name;
+    if (name.includes('Egypt') || name.includes('Renaissance')) return "EXHIBITION";
+    if (name.includes('India') || name.includes('Mozart')) return "CULTURAL SHOW";
+    if (name.includes('Workshop') || name.includes('Calligraphy') || name.includes('Pottery')) return "WORKSHOP";
+    return "SPECIAL EVENT";
+  };
 
   return (
     <AnimatePresence>
@@ -43,9 +64,10 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                   </div>
                 </div>
 
-                {/* Left Side Visual (Museum Image) - subtle watermark */}
-                <div className="absolute left-0 top-0 bottom-0 w-1/3 opacity-[0.07] select-none pointer-events-none hidden md:block">
-                  <img src={museumImage} alt="Museum" className="h-full w-full object-cover grayscale" />
+                {/* Left Side Visual (Event or Museum Image) - watermark covering full background */}
+                <div className="absolute inset-0 opacity-[0.18] select-none pointer-events-none z-0 overflow-hidden">
+                  <img src={eventImage || museumImage} alt="Background" className="h-full w-full object-cover filter blur-[0.5px]" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/60 to-white/90" />
                 </div>
 
                 {/* Content Area */}
@@ -53,11 +75,11 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                   <div className="text-center mb-8">
                     <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-1">E-Ticket</h2>
                     <div className="inline-block px-5 py-1 bg-slate-900 text-white rounded-full text-[10px] font-black tracking-widest uppercase mb-4 shadow-lg shadow-slate-100">
-                      Treasures of Ancient India
+                      {ticket.event_name || 'General Admission'}
                     </div>
                     <div className="flex items-center justify-center gap-3 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">
                       <div className="h-px w-8 bg-gray-200" />
-                      EXHIBITION
+                      {getCategory()}
                       <div className="h-px w-8 bg-gray-200" />
                     </div>
                   </div>
@@ -123,7 +145,7 @@ const TicketModal = ({ ticket, isOpen, onClose }) => {
                           </div>
                        </div>
                        <div className="text-right">
-                          <h4 className="text-2xl font-black tracking-tighter">₹{ticket.total_price}.00</h4>
+                          <h4 className="text-2xl font-black tracking-tighter">₹{parseFloat(ticket.total_price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
                        </div>
                     </div>
                   </div>

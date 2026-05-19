@@ -10,23 +10,34 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [expandedNotif, setExpandedNotif] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const token = localStorage.getItem('token');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
-    if (token) {
+    
+    let interval;
+    const handleActivity = () => {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000); // Poll every minute
-      return () => {
-        window.removeEventListener('scroll', handleScroll);
-        clearInterval(interval);
-      };
+      setUser(JSON.parse(localStorage.getItem('user') || '{}'));
+    };
+
+    if (token) {
+      setUser(JSON.parse(localStorage.getItem('user') || '{}'));
+      fetchNotifications();
+      interval = setInterval(fetchNotifications, 60000); // Poll every minute
+      window.addEventListener('activity-completed', handleActivity);
     }
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (interval) clearInterval(interval);
+      window.removeEventListener('activity-completed', handleActivity);
+    };
   }, [token]);
 
   const fetchNotifications = async () => {
@@ -142,13 +153,16 @@ const Navbar = () => {
                               <div 
                                 key={n.id} 
                                 className={`p-4 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer relative ${!n.is_read ? 'bg-museum-gold/5' : ''}`}
-                                onClick={() => markAsRead(n.id)}
+                                onClick={() => {
+                                  markAsRead(n.id);
+                                  setExpandedNotif(expandedNotif === n.id ? null : n.id);
+                                }}
                               >
                                 <div className="flex justify-between items-start mb-1">
                                   <h4 className={`text-xs font-bold ${!n.is_read ? 'text-museum-gold' : 'text-white'}`}>{n.title}</h4>
                                   <span className="text-[9px] text-gray-500 font-medium">{new Date(n.created_at).toLocaleDateString()}</span>
                                 </div>
-                                <p className="text-[11px] text-gray-400 leading-relaxed line-clamp-2">{n.message}</p>
+                                <p className={`text-[11px] text-gray-400 leading-relaxed transition-all duration-300 ${expandedNotif === n.id ? '' : 'line-clamp-2'}`}>{n.message}</p>
                                 {!n.is_read && <div className="absolute left-1 top-1/2 -translate-y-1/2 w-1 h-8 bg-museum-gold rounded-full" />}
                               </div>
                             ))
@@ -166,8 +180,12 @@ const Navbar = () => {
                 </div>
 
                 <Link to="/profile" className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-2xl border border-white/10 hover:border-museum-gold/50 hover:bg-white/10 transition-all group">
-                  <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg group-hover:scale-110 transition-transform">
-                    {user.name?.charAt(0)}
+                  <div className="w-8 h-8 bg-museum-gold rounded-lg flex items-center justify-center text-museum-dark text-xs font-black shadow-lg group-hover:scale-110 transition-transform overflow-hidden">
+                    {user.profile_picture ? (
+                      <img src={user.profile_picture} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      user.name?.charAt(0)
+                    )}
                   </div>
                   <div className="flex flex-col items-start -space-y-1">
                     <span className="text-xs font-black text-white">{user.name?.split(' ')[0]}</span>

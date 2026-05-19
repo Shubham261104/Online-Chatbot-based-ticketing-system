@@ -1,6 +1,6 @@
 // Force build trigger: 2026-05-12T12:43
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Bot, User, RotateCcw, MessageCircle, Sparkles, Plus, History, HelpCircle, Map, Info, Globe, ChevronDown, Paperclip, Ticket, Headphones, Check, CheckCheck, Trash2, ShieldCheck, Zap, ArrowRight, Star, Clock, Landmark, MapPin, QrCode, Eye, Download } from 'lucide-react';
+import { Send, Bot, User, RotateCcw, MessageCircle, Sparkles, Plus, History, HelpCircle, Map, Info, Globe, ChevronDown, Paperclip, Ticket, Headphones, Check, CheckCheck, Trash2, ShieldCheck, Zap, ArrowRight, Star, Clock, Landmark, MapPin, QrCode, Eye, Download, CreditCard, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
@@ -35,6 +35,170 @@ const PRICES = {
   bookingFee: 50
 };
 
+const PdfViewerModal = ({ isOpen, onClose, pdfName }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  if (!isOpen) return null;
+
+  const pages = [
+    {
+      title: "Page 1: Floor Plan & Layout",
+      content: (
+        <div className="space-y-4">
+          <div className="h-44 bg-slate-900 rounded-2xl relative overflow-hidden flex flex-col justify-between p-5 text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
+            <div className="flex justify-between items-start z-10">
+              <span className="text-[9px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-300 px-2.5 py-1 rounded-full border border-blue-500/30">Lobby Level</span>
+              <span className="text-[10px] font-black text-slate-450 uppercase tracking-wider">Visitor Flow Plan</span>
+            </div>
+            <div className="space-y-1 z-10">
+              <h4 className="text-base font-black tracking-tight">Main Ground Floor</h4>
+              <p className="text-[11px] text-slate-400 font-medium">Ticketing Counter, Audio Guides, and Restrooms</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="w-7 h-7 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center font-black text-xs">01</div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-800">East Wing: Harappan Civilization Gallery</p>
+                <p className="text-[10px] text-slate-400 font-bold">Pottery, seals, jewelry, and bronze figurines</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="w-7 h-7 bg-indigo-100 text-indigo-700 rounded-lg flex items-center justify-center font-black text-xs">02</div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-800">West Wing: Buddhist & Gupta Sculptures</p>
+                <p className="text-[10px] text-slate-400 font-bold">Stone carvings, stone pillars, and relics</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="w-7 h-7 bg-purple-100 text-purple-700 rounded-lg flex items-center justify-center font-black text-xs">03</div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-800">Central Atrium: Souvenir Emporium & Cloakroom</p>
+                <p className="text-[10px] text-slate-400 font-bold">Guidebooks, local handicrafts, and bag deposits</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Page 2: Royal Exhibits & Medieval Arms",
+      content: (
+        <div className="space-y-4">
+          <div className="h-44 bg-slate-900 rounded-2xl relative overflow-hidden flex flex-col justify-between p-5 text-white">
+            <div className="absolute inset-0 bg-[radial-gradient(#ec4899_1px,transparent_1px)] [background-size:16px_16px] opacity-20" />
+            <div className="flex justify-between items-start z-10">
+              <span className="text-[9px] font-black uppercase tracking-widest bg-pink-500/20 text-pink-300 px-2.5 py-1 rounded-full border border-pink-500/30">Level 2</span>
+              <span className="text-[10px] font-black text-slate-450 uppercase tracking-wider">Weaponry & Textiles</span>
+            </div>
+            <div className="space-y-1 z-10">
+              <h4 className="text-base font-black tracking-tight">Royal & Miniature Galleries</h4>
+              <p className="text-[11px] text-slate-400 font-medium">Historical weapons, garments, and paintings</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="w-7 h-7 bg-pink-100 text-pink-700 rounded-lg flex items-center justify-center font-black text-xs">04</div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-800">Mughal & Rajput Armoury</p>
+                <p className="text-[10px] text-slate-400 font-bold">Helmets, chainmail, swords, and historic shields</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="w-7 h-7 bg-amber-100 text-amber-700 rounded-lg flex items-center justify-center font-black text-xs">05</div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-800">Miniature Paintings Hall</p>
+                <p className="text-[10px] text-slate-400 font-bold">Fine court art from Pahari, Deccan, and Rajasthani schools</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: "Page 3: Important Rules & FAQs",
+      content: (
+        <div className="space-y-4">
+          <div className="p-4 bg-amber-50 border border-amber-200/65 rounded-2xl">
+            <h5 className="text-xs font-black text-amber-805 uppercase tracking-widest mb-2">⚠️ General Regulations</h5>
+            <ul className="text-[11px] text-amber-750 font-bold space-y-1.5 list-disc pl-4">
+              <li>Photography is allowed for personal use only. No tripod or flash.</li>
+              <li>Outside food and beverages are strictly prohibited inside galleries.</li>
+              <li>Please maintain silence and do not touch any displayed objects.</li>
+              <li>Touchscreen kiosks are located at all intersections for guidance.</li>
+            </ul>
+          </div>
+          <div className="p-4 bg-blue-50 border border-blue-200/65 rounded-2xl">
+            <h5 className="text-xs font-black text-blue-805 uppercase tracking-widest mb-2">📞 Helpline & Contacts</h5>
+            <ul className="text-[11px] text-blue-750 font-bold space-y-1">
+              <li>Information Desk: +91 11 2301 9224</li>
+              <li>Security & Lost & Found: Ext. 204</li>
+              <li>Medical Room: Ground Floor, Lobby B</li>
+            </ul>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+      <div className="bg-white rounded-[2rem] w-full max-w-xl overflow-hidden shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-6 py-4 bg-white border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-rose-50 text-rose-650 rounded-xl flex items-center justify-center font-black text-[11px] shadow-sm">PDF</div>
+            <div>
+              <h3 className="text-xs font-black text-slate-800 truncate max-w-[260px]">{pdfName}</h3>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{pages[currentPage - 1].title}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-red-500 rounded-lg transition-all hover:bg-slate-100">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto p-5 bg-slate-100/50">
+          <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 min-h-[320px]">
+            {pages[currentPage - 1].content}
+          </div>
+        </div>
+
+        {/* Footer controls */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(c => c - 1)}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-650 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Prev
+            </button>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">Page {currentPage} of {pages.length}</span>
+            <button 
+              disabled={currentPage === pages.length}
+              onClick={() => setCurrentPage(c => c + 1)}
+              className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-650 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+            >
+              Next
+            </button>
+          </div>
+
+          <button 
+            onClick={() => {
+              toast.success("Visitor Guide PDF printed successfully!");
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 transition-all"
+          >
+            Print Guide
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const ChatbotPage = () => {
   const [language, setLanguage] = useState(null);
 
@@ -53,7 +217,7 @@ const ChatbotPage = () => {
     {
       id: 1,
       role: 'bot',
-      text: "Please select your preferred language / कृपया अपनी पसंदीदा भाषा चुनें / Veuillez sélectionner votre langue:",
+      text: "Please select your preferred language",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       type: 'LANGUAGE_SELECT'
     }
@@ -84,12 +248,21 @@ const ChatbotPage = () => {
   const [museumList, setMuseumList] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPdfName, setSelectedPdfName] = useState('');
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [history, setHistory] = useState([]);
   const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const navigate = useNavigate();
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    } else if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   };
@@ -98,15 +271,27 @@ const ChatbotPage = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const fetchHistory = async () => {
+    if (!localStorage.getItem('token')) return;
+    try {
+      const res = await api.get('/chatbot/history');
+      setHistory(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch history");
+    }
+  };
+
+  const handleClearHistory = async () => {
+    try {
+      await api.post('/chatbot/history/clear');
+      setHistory([]);
+      toast.success("Recent history cleared!");
+    } catch (err) {
+      toast.error("Failed to clear history");
+    }
+  };
+
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const res = await api.get('/chatbot/history');
-        setHistory(res.data);
-      } catch (err) {
-        console.error("Failed to fetch history");
-      }
-    };
     fetchHistory();
   }, []);
 
@@ -176,10 +361,12 @@ const ChatbotPage = () => {
           role: 'bot',
           text: res.data.reply || "I'm here to help!",
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          action: (res.data.reply && res.data.reply.toLowerCase().includes('book')) ? { label: 'Start Booking Flow', type: 'BOOK_FLOW' } : null
+          action: (res.data.reply && res.data.reply.toLowerCase().includes('book')) ? { label: 'Start Booking Flow', type: 'BOOK_FLOW' } : null,
+          attachment: res.data.attachment || null
         };
         setMessages(prev => [...prev, botReply]);
         setIsTyping(false);
+        fetchHistory();
       }, 800);
     } catch (err) {
       setTimeout(() => {
@@ -410,8 +597,8 @@ const ChatbotPage = () => {
         {
           id: Date.now(),
           role: 'bot',
-          text: "Please select your preferred language / कृपया अपनी पसंदीदा भाषा चुनें / Veuillez sélectionner votre langue:",
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          text: "Please select your preferred language",
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: 'LANGUAGE_SELECT'
         }
       ]);
@@ -442,7 +629,6 @@ const ChatbotPage = () => {
             </div>
           </div>
         </div>
-
         <div className="flex-grow space-y-1 overflow-hidden flex flex-col">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2">{t(language, 'menu')}</p>
           {menuItems.map((item) => (
@@ -458,92 +644,274 @@ const ChatbotPage = () => {
           ))}
 
           <div className="mt-8 flex-grow flex flex-col min-h-0">
-            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2 flex items-center gap-2">
-              <History className="w-3 h-3" /> {t(language, 'recentHistory')}
-            </p>
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2 flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <History className="w-3 h-3" /> {t(language, 'recentHistory')}
+              </span>
+              {history.length > 0 && (
+                <button 
+                  onClick={handleClearHistory}
+                  className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                  title="Clear history"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
+            </div>
             <div className="flex-grow overflow-y-auto no-scrollbar space-y-2 pr-1">
-              {history.length > 0 ? (
-                history.slice(-15).reverse().map((log) => (
-                  <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 hover:bg-slate-100 transition-colors cursor-default group">
+              {Array.isArray(history) && history.filter(log => log.sender === 'user').length > 0 ? (
+                history.filter(log => log.sender === 'user').slice(-15).reverse().map((log) => (
+                  <div 
+                    key={log.id} 
+                    onClick={() => handleSend(log.message)}
+                    className="p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-500/30 hover:bg-blue-50/30 transition-all duration-300 cursor-pointer group active:scale-[0.98]"
+                  >
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`text-[8px] font-black uppercase tracking-widest ${log.sender === 'user' ? 'text-blue-500' : 'text-slate-400'}`}>
-                        {log.sender === 'user' ? t(language, 'you') : t(language, 'aiAssistant')}
+                      <span className="text-[8px] font-black uppercase tracking-widest text-blue-500">
+                        {t(language, 'you')}
                       </span>
-                      <span className="text-[7px] font-bold text-slate-300 group-hover:text-slate-400 transition-colors">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[7px] font-bold text-slate-350 group-hover:text-slate-450 transition-colors">{new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <p className="text-[11px] font-bold text-slate-600 line-clamp-2 leading-snug">{log.message}</p>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{t(language, 'noHistory')}</p>
+                <div className="p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{t(language, 'noHistory')}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        <div className="mt-auto">
-          <div className="bg-slate-900 p-6 rounded-3xl text-white mb-4">
-            <h4 className="text-sm font-black mb-1">{t(language, 'quickBooking')}</h4>
-            <p className="text-[10px] text-slate-400 mb-4">{t(language, 'getPass')}</p>
-            <Link to="/booking" className="block w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-black text-center transition-all">
-              {t(language, 'bookNowSidebar')}
-            </Link>
-          </div>
-        </div>
       </div>
 
       {/* Main Chat Section */}
-      <div className="flex-1 flex flex-col relative bg-[#FDFDFF] max-w-7xl mx-auto w-full border-x border-slate-50">
+      <div className="flex-1 flex flex-col relative bg-[#FDFDFF] max-w-none w-full border-x border-slate-50 overflow-hidden">
+        {/* Live Animated Background Orbs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          {/* Main Glowing Orbs */}
+          <motion.div 
+            animate={{
+              x: [0, 80, -40, 0],
+              y: [0, -90, 50, 0],
+              scale: [1, 1.25, 0.85, 1]
+            }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute top-1/4 left-1/4 w-[450px] h-[450px] rounded-full bg-gradient-to-tr from-blue-400/20 to-indigo-500/25 blur-[100px]"
+          />
+          <motion.div 
+            animate={{
+              x: [0, -100, 50, 0],
+              y: [0, 80, -80, 0],
+              scale: [1, 0.9, 1.15, 1]
+            }}
+            transition={{
+              duration: 22,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-purple-400/20 to-pink-500/25 blur-[120px]"
+          />
+          <motion.div 
+            animate={{
+              scale: [1, 1.3, 0.8, 1],
+              opacity: [0.2, 0.4, 0.2, 0.2]
+            }}
+            transition={{
+              duration: 14,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="absolute top-10 right-10 w-[350px] h-[350px] rounded-full bg-cyan-300/15 blur-[80px]"
+          />
+
+          {/* Floating Glassmorphic Particles */}
+          {[...Array(8)].map((_, idx) => {
+            const size = [24, 36, 16, 48, 20, 32, 12, 40][idx];
+            const left = ['10%', '25%', '70%', '85%', '40%', '60%', '15%', '75%'][idx];
+            const top = ['15%', '45%', '20%', '65%', '80%', '10%', '90%', '35%'][idx];
+            const delay = [0, 2, 4, 1, 3, 5, 2.5, 1.5][idx];
+            const duration = [12, 18, 15, 22, 14, 20, 10, 25][idx];
+            return (
+              <motion.div
+                key={idx}
+                animate={{
+                  y: [0, -40, 30, 0],
+                  x: [0, 30, -20, 0],
+                  scale: [1, 1.2, 0.9, 1],
+                  opacity: [0.15, 0.4, 0.15, 0.15]
+                }}
+                transition={{
+                  duration,
+                  repeat: Infinity,
+                  delay,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  position: 'absolute',
+                  width: size,
+                  height: size,
+                  left,
+                  top,
+                }}
+                className="rounded-full bg-gradient-to-br from-blue-500/25 to-purple-500/25 backdrop-blur-[3px] border border-blue-500/15 shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]"
+              />
+            );
+          })}
+        </div>
+
         {/* Header */}
-        <div className="px-6 py-4 bg-white/90 backdrop-blur-md border-b border-slate-100 flex items-center justify-between z-20">
-          <div className="flex items-center gap-3">
-            <div className="lg:hidden w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
+        <div className="px-8 py-5 bg-white/90 backdrop-blur-md border-b border-slate-100 flex items-center justify-between z-20">
+          <div className="flex items-center gap-4">
+            <div className="lg:hidden w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+              <Bot className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-black text-slate-900">{t(language, 'museumGuide')}</h2>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t(language, 'aiAssistance')}</p>
+              <h2 className="text-lg font-black text-slate-900">{t(language, 'museumGuide')}</h2>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">{t(language, 'aiAssistance')}</p>
             </div>
           </div>
-          <button onClick={() => setMessages([])} className="p-2 text-slate-400 hover:text-red-500 rounded-lg transition-all">
-            <Trash2 className="w-5 h-5" />
+          <button onClick={() => setMessages([])} className="p-2.5 text-slate-400 hover:text-red-500 rounded-lg transition-all">
+            <Trash2 className="w-6 h-6" />
           </button>
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto px-6 py-8 space-y-8 no-scrollbar scroll-smooth">
+        <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-8 py-10 space-y-10 no-scrollbar scroll-smooth bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] bg-transparent relative z-10">
           <AnimatePresence>
             {messages.map((m) => (
               <motion.div
                 key={m.id}
                 initial={{ opacity: 0, y: 15, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={`flex gap-3 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
+                className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'bot' ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm ${m.role === 'bot' ? 'bg-slate-900 text-white' : 'bg-blue-600 text-white'
                   }`}>
-                  {m.role === 'bot' ? <Bot className="w-5 h-5" /> : <User className="w-5 h-5" />}
+                  {m.role === 'bot' ? <Bot className="w-6 h-6" /> : <User className="w-6 h-6" />}
                 </div>
-                <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[85%] md:max-w-[70%]`}>
-                  <div className={`p-4 md:p-5 rounded-2xl text-sm font-semibold leading-relaxed shadow-sm ${m.role === 'user'
+                <div className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'} max-w-[90%] md:max-w-[85%]`}>
+                  <div className={`p-5 md:p-6 rounded-2xl text-[15px] font-semibold leading-relaxed shadow-sm ${m.role === 'user'
                       ? 'bg-blue-600 text-white rounded-tr-none'
                       : 'bg-white border border-slate-100 text-slate-800 rounded-tl-none'
                     }`}>
-                    <p className="whitespace-pre-line">{m.text}</p>
-
-                    {m.type === 'LANGUAGE_SELECT' && (
-                      <div className="mt-4 grid grid-cols-2 gap-2">
-                        {Object.keys(GREETINGS).map(lang => (
-                          <button
-                            key={lang}
-                            onClick={() => handleBookingAction('SELECT_LANGUAGE', lang)}
-                            className="p-3 bg-slate-50 hover:bg-blue-600 hover:text-white border border-slate-100 rounded-xl text-xs font-black transition-all shadow-sm text-center"
+                    {m.type === 'LANGUAGE_SELECT' ? (
+                      <div className="space-y-4 w-full min-w-[280px]">
+                        {/* Header Section */}
+                        <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                          <motion.div
+                            animate={{ 
+                              scale: [1, 1.1, 1],
+                              rotate: [0, 5, -5, 0]
+                            }}
+                            transition={{ 
+                              duration: 4, 
+                              repeat: Infinity,
+                              ease: "easeInOut"
+                            }}
+                            className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-100 shrink-0"
                           >
-                            {lang}
-                          </button>
-                        ))}
+                            <Globe className="w-5 h-5 animate-pulse" />
+                          </motion.div>
+                          <div>
+                            <motion.h3 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.1 }}
+                              className="font-black text-sm text-slate-900 leading-tight uppercase tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent"
+                            >
+                              Choose Your Language
+                            </motion.h3>
+                            <motion.p 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.2 }}
+                              className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5"
+                            >
+                              Select to begin interaction
+                            </motion.p>
+                          </div>
+                        </div>
+
+                        {/* Interactive Grid of Buttons */}
+                        <motion.div 
+                          variants={{
+                            hidden: { opacity: 0 },
+                            show: {
+                              opacity: 1,
+                              transition: {
+                                staggerChildren: 0.04
+                              }
+                            }
+                          }}
+                          initial="hidden"
+                          animate="show"
+                          className="grid grid-cols-2 gap-2"
+                        >
+                          {Object.keys(GREETINGS).map((lang) => (
+                            <motion.button
+                              key={lang}
+                              variants={{
+                                hidden: { opacity: 0, y: 8, scale: 0.95 },
+                                show: { opacity: 1, y: 0, scale: 1 }
+                              }}
+                              whileHover={{ 
+                                scale: 1.04,
+                                y: -2,
+                                boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -4px rgba(59, 130, 246, 0.1)'
+                              }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => handleBookingAction('SELECT_LANGUAGE', lang)}
+                              className="group flex items-center justify-center p-3.5 bg-white hover:bg-gradient-to-br hover:from-blue-600 hover:to-indigo-600 border border-slate-100 hover:border-blue-500 rounded-2xl text-center transition-all duration-300 shadow-sm hover:text-white"
+                            >
+                              <span className="text-xs font-black text-slate-800 group-hover:text-white transition-colors duration-200">
+                                {lang}
+                              </span>
+                            </motion.button>
+                          ))}
+                        </motion.div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="whitespace-pre-line">{m.text}</p>
+                        {m.attachment && (
+                          <div className="mt-4 p-4 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-between gap-4 hover:border-blue-200 transition-all group">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-red-50 text-red-650 rounded-xl flex items-center justify-center shrink-0 shadow-sm font-black text-[10px]">
+                                PDF
+                              </div>
+                              <div>
+                                <p className="text-xs font-black text-slate-800 truncate max-w-[150px]">{m.attachment.name}</p>
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{m.attachment.size || '2.4 MB'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button 
+                                onClick={() => {
+                                  setSelectedPdfName(m.attachment.name);
+                                  setIsPdfModalOpen(true);
+                                }}
+                                className="w-9 h-9 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all hover:scale-105"
+                                title="View PDF"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  toast.success(`${m.attachment.name} downloaded successfully!`);
+                                }}
+                                className="w-9 h-9 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-slate-500 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all hover:scale-105"
+                                title="Download PDF"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -754,9 +1122,21 @@ const ChatbotPage = () => {
                           </span>
                         </div>
 
-                        <div className="pt-2">
-                          <button onClick={() => handleBookingAction('PROCEED_TO_DETAILS')} className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-blue-100 transition-transform hover:scale-[1.02]">
-                            {t(language, 'proceedPayment')} <ArrowRight className="w-4 h-4" />
+                        <div className="grid grid-cols-2 gap-2 pt-2">
+                          <button
+                            onClick={() => handleBookingAction('PROCEED_TO_DETAILS')}
+                            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                          >
+                            <CreditCard className="w-3.5 h-3.5" /> Pay In Chat
+                          </button>
+                          
+                          <button
+                            onClick={() => {
+                              navigate('/booking', { state: { bookingData } });
+                            }}
+                            className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02]"
+                          >
+                            <ArrowRight className="w-3.5 h-3.5 animate-pulse" /> Complete on Page
                           </button>
                         </div>
                       </div>
@@ -942,8 +1322,22 @@ const ChatbotPage = () => {
             </button>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="relative flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100">
-            <input value={input} onChange={e => setInput(e.target.value)} placeholder={t(language, 'askAnything')} className="flex-grow py-3 px-4 outline-none font-bold text-slate-700 bg-transparent text-sm" />
+          <form 
+            onSubmit={(e) => { e.preventDefault(); handleSend(); }} 
+            className={`relative flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border transition-all duration-300 ${
+              isInputFocused 
+                ? 'border-blue-500 bg-white ring-4 ring-blue-500/10 shadow-md shadow-blue-50/50' 
+                : 'border-slate-100 hover:border-slate-200'
+            }`}
+          >
+            <input 
+              value={input} 
+              onChange={e => setInput(e.target.value)} 
+              onFocus={() => setIsInputFocused(true)}
+              onBlur={() => setIsInputFocused(false)}
+              placeholder={t(language, 'askAnything')} 
+              className="flex-grow py-3 px-4 outline-none font-bold text-slate-700 bg-transparent text-sm" 
+            />
             <button type="submit" disabled={!input.trim()} className="w-12 h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 disabled:opacity-30 shrink-0 transition-all">
               <Send className="w-5 h-5" />
             </button>
@@ -955,6 +1349,12 @@ const ChatbotPage = () => {
         ticket={selectedTicket}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      <PdfViewerModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        pdfName={selectedPdfName}
       />
     </div>
   );

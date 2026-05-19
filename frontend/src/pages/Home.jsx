@@ -147,15 +147,13 @@ const Home = () => {
            style={{ backgroundImage: 'radial-gradient(circle, #D9A048 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-24 pb-12 lg:pt-32 lg:pb-24 overflow-hidden">
+      <section className="relative min-h-[75vh] lg:h-[680px] flex items-center pt-24 pb-12 overflow-hidden bg-museum-dark">
         {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img 
-            src={heroBg} 
-            alt="Museum Interior" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-museum-dark via-museum-dark/70 to-transparent" />
+        <div 
+          className="absolute inset-0 z-0 bg-[length:auto_100%] bg-right bg-no-repeat bg-museum-dark"
+          style={{ backgroundImage: `url(${heroBg})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-museum-dark via-museum-dark/60 to-transparent" />
           
           {/* Floating Particles */}
           <div className="absolute inset-0 pointer-events-none">
@@ -212,15 +210,15 @@ const Home = () => {
           </div>
         </div>
 
-        <div className="container mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7 xl:col-span-8">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-museum-gold/20 backdrop-blur-md text-museum-gold rounded-full text-xs font-bold uppercase tracking-widest mb-8 border border-museum-gold/30"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-museum-gold/10 backdrop-blur-md text-museum-gold rounded-full text-xs font-bold uppercase tracking-widest mb-8 border border-museum-gold/20"
             >
-              <Landmark className="h-4 w-4" /> Welcome to Museum Ticketing
+              <Landmark className="h-4 w-4" /> WELCOME TO MUSEUM TICKETING
             </motion.div>
 
             <motion.h1 
@@ -228,7 +226,7 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-5xl md:text-6xl lg:text-8xl font-bold text-white leading-[1.1] mb-8"
+              className="text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-8"
             >
               Book Museum <br />
               Tickets <span className="text-museum-gold">Easily</span>
@@ -239,9 +237,9 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="text-lg md:text-xl text-gray-300 mb-12 max-w-xl leading-relaxed font-medium"
+              className="text-base md:text-lg text-gray-300 mb-10 max-w-xl leading-relaxed font-medium"
             >
-              Skip the lines and enjoy a seamless booking experience with our AI Chatbot. Get instant support and secure your entry in seconds.
+              Skip the lines and enjoy a seamless booking experience with our AI Chatbot.
             </motion.p>
 
             <motion.div 
@@ -249,16 +247,16 @@ const Home = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
-              className="flex flex-wrap gap-5 mb-16"
+              className="flex flex-wrap gap-4 mb-12"
             >
               <Link to="/booking">
-                <button className="px-10 py-5 bg-museum-gold hover:bg-museum-accent text-museum-dark font-black text-lg rounded-2xl flex items-center gap-2 transition-all transform hover:scale-[1.02] shadow-2xl shadow-museum-gold/20">
-                  Book Tickets Now <ArrowRight className="w-6 h-6" />
+                <button className="px-8 py-4 bg-museum-gold hover:bg-museum-accent text-museum-dark font-bold text-base rounded-xl flex items-center gap-2 transition-all transform hover:scale-[1.02] shadow-lg cursor-pointer">
+                  Book Tickets Now <ArrowRight className="w-5 h-5" />
                 </button>
               </Link>
               <Link to="/about">
-                <button className="px-10 py-5 bg-white/5 backdrop-blur-sm border-2 border-white/20 hover:bg-white/10 text-white font-bold text-lg rounded-2xl flex items-center gap-2 transition-all">
-                  Explore Museum <Landmark className="w-6 h-6" />
+                <button className="px-8 py-4 bg-transparent border border-white/20 hover:border-white/40 hover:bg-white/5 text-white font-bold text-base rounded-xl flex items-center gap-2 transition-all cursor-pointer">
+                  Explore Museum <Landmark className="w-5 h-5" />
                 </button>
               </Link>
             </motion.div>
@@ -268,7 +266,7 @@ const Home = () => {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.5 }}
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/5 backdrop-blur-md p-4 rounded-3xl border border-white/10 w-fit"
+              className="flex items-center gap-4"
             >
               <div className="flex -space-x-3">
                 {avatars.map((url, i) => (
@@ -276,66 +274,41 @@ const Home = () => {
                     key={i} 
                     src={url} 
                     alt="Visitor" 
-                    className="w-12 h-12 rounded-full border-4 border-museum-dark object-cover shadow-xl"
+                    className="w-10 h-10 rounded-full border-2 border-museum-dark object-cover shadow-xl"
                   />
                 ))}
-                <div className="w-12 h-12 rounded-full border-4 border-museum-dark bg-museum-gold flex items-center justify-center text-museum-dark font-black text-xs shadow-xl">
-                  +2k
-                </div>
               </div>
-              <div>
-                <p className="text-white font-bold text-lg leading-none mb-1">
-                  <span className="text-museum-gold tabular-nums">{visitorCount.toLocaleString()}</span> happy visitors
-                </p>
-                <div className="flex items-center gap-1">
-                   {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-museum-gold text-museum-gold" />)}
-                  <span className="text-gray-400 text-sm ml-2">4.9/5 Live Rating</span>
-                </div>
-              </div>
+              <p className="text-gray-300 font-semibold text-sm">
+                Join thousands of happy visitors
+              </p>
             </motion.div>
           </div>
-
-          {/* Chatbot Preview Widget */}
-          <motion.div
-            initial={{ opacity: 0, x: 50, scale: 0.9 }}
-            whileInView={{ opacity: 1, x: 0, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="lg:col-span-5 xl:col-span-4 hidden lg:flex justify-end"
-          >
-            <div className="w-full max-w-[400px] bg-white rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] p-8 relative border border-gray-100">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-16 h-16 bg-blue-50 rounded-[2rem] flex items-center justify-center border border-blue-100 shadow-inner overflow-hidden relative group">
-                  <Bot className="w-9 h-9 text-blue-600 group-hover:scale-110 transition-transform" />
-                  <div className="absolute bottom-1 right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse" />
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black text-gray-900 leading-none mb-1">Hi there! 👋</h4>
-                  <p className="text-gray-500 font-medium">Your Virtual Guide</p>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="bg-gray-50 p-4 rounded-2xl rounded-tl-none border border-gray-100">
-                  <p className="text-gray-700 font-medium">Welcome to the Museum! I can help you find available slots and book tickets in seconds.</p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-2xl rounded-tr-none border border-blue-100 ml-auto w-[80%]">
-                  <p className="text-blue-700 font-bold">Show me available tickets for tomorrow.</p>
-                </div>
-              </div>
-              
-              <Link to="/chat">
-                <button className="w-full py-5 bg-museum-dark hover:bg-black text-white font-black text-lg rounded-2xl flex items-center justify-center gap-3 transition-all group shadow-xl">
-                  Chat Now to Book
-                  <MessageSquare className="w-6 h-6 text-museum-gold group-hover:rotate-12 transition-transform" />
-                </button>
-              </Link>
-
-              {/* Decorative Element */}
-              <div className="absolute -top-10 -right-10 w-24 h-24 bg-museum-gold/20 blur-3xl rounded-full" />
-            </div>
-          </motion.div>
         </div>
+
+        {/* Floating Chatbot Preview Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4 }}
+          className="absolute bottom-12 right-12 hidden lg:flex bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 p-6 items-start gap-4 max-w-[340px] z-20"
+        >
+          <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center flex-shrink-0 relative">
+            <Bot className="w-6 h-6 text-blue-600" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+          </div>
+          <div className="flex-grow">
+            <h4 className="text-sm font-bold text-gray-900 mb-1">Hi! 👋</h4>
+            <p className="text-xs text-gray-500 mb-4 leading-relaxed font-medium">
+              I'm your museum assistant. How can I help you today?
+            </p>
+            <Link to="/chat">
+              <button className="px-5 py-2.5 bg-museum-dark hover:bg-black text-white font-bold text-xs rounded-full transition-all shadow-md cursor-pointer">
+                Chat Now
+              </button>
+            </Link>
+          </div>
+        </motion.div>
       </section>
 
       {/* Live Ticker */}

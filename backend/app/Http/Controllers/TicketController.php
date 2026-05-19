@@ -12,6 +12,15 @@ class TicketController extends Controller
 {
     public function book(Request $request)
     {
+        $request->merge([
+            'adults' => $request->input('adults', 0),
+            'children' => $request->input('children', 0),
+            'students' => $request->input('students', 0),
+            'females' => $request->input('females', 0),
+            'seniors' => $request->input('seniors', 0),
+            'foreigners' => $request->input('foreigners', 0),
+        ]);
+
         $request->validate([
             'date' => 'required|date',
             'timeSlot' => 'required|string',
@@ -30,7 +39,16 @@ class TicketController extends Controller
             ->first();
 
         if (!$slot) {
-            return response()->json(['message' => 'Invalid slot selected'], 400);
+            $defaultCapacity = \App\Models\Setting::where('key', 'default_capacity')->value('value') ?? 50;
+            $defaultPrice = \App\Models\Setting::where('key', 'ticket_price')->value('value') ?? 500;
+
+            $slot = Slot::create([
+                'date' => $request->date,
+                'time_slot' => $request->timeSlot,
+                'capacity' => $defaultCapacity,
+                'price' => $defaultPrice,
+                'booked' => 0
+            ]);
         }
 
         $totalVisitors = $request->adults + $request->children + $request->students + $request->females + $request->seniors + $request->foreigners;
@@ -122,6 +140,18 @@ class TicketController extends Controller
                 'razorpay_payment_id' => $request->payment_id,
                 'qr_code' => base64_encode(QrCode::format('svg')->size(200)->generate($ticket->id))
             ]);
+
+            // Create booking notification in DB
+            $eventName = $ticket->event_name ?? 'Museum Tour';
+            if ($ticket->user_id) {
+                \App\Models\Notification::create([
+                    'user_id' => $ticket->user_id,
+                    'type' => 'success',
+                    'title' => 'Booking Confirmed!',
+                    'message' => "Your ticket for {$eventName} on {$ticket->date} ({$ticket->time_slot}) has been successfully booked. Ticket ID: #{$ticket->id}.",
+                    'is_read' => false
+                ]);
+            }
 
             return response()->json(['message' => 'Payment verified', 'ticket' => $ticket]);
         }
@@ -469,6 +499,18 @@ class TicketController extends Controller
         if ($slot) {
             $totalVisitors = $ticket->adults + $ticket->children + $ticket->students + $ticket->females + $ticket->seniors + $ticket->foreigners;
             $slot->decrement('booked', $totalVisitors);
+        }
+
+        // Create cancellation notification in DB
+        $eventName = $ticket->event_name ?? 'Museum Tour';
+        if ($ticket->user_id) {
+            \App\Models\Notification::create([
+                'user_id' => $ticket->user_id,
+                'type' => 'alert',
+                'title' => 'Booking Cancelled',
+                'message' => "Your ticket for {$eventName} on {$ticket->date} ({$ticket->time_slot}) has been cancelled. Refund status: " . ($ticket->status === 'refunded' ? 'Processed' : 'N/A') . ". Ticket ID: #{$ticket->id}.",
+                'is_read' => false
+            ]);
         }
 
         return response()->json([
